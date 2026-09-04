@@ -34,6 +34,14 @@ Route::middleware('auth')->group(function () {
         Route::delete("assets/{$uriPrefix}/{industry}/{entry}", [KeywordVaultController::class, 'destroy'])
             ->defaults('type', $vaultType)
             ->name("{$routeName}.destroy");
+
+        Route::get("assets/{$uriPrefix}/{industry}/export", [KeywordVaultController::class, 'export'])
+            ->defaults('type', $vaultType)
+            ->name("{$routeName}.export");
+
+        Route::post("assets/{$uriPrefix}/{industry}/import", [KeywordVaultController::class, 'import'])
+            ->defaults('type', $vaultType)
+            ->name("{$routeName}.import");
     }
 
     // Every other sidebar section (config/nav.php) still points at this
