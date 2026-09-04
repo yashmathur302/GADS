@@ -19,10 +19,15 @@
     :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
     aria-label="{{ __('Primary') }}"
 >
-    <div class="h-16 flex items-center px-6 border-b border-gray-800">
-        <a href="{{ route('dashboard') }}" class="flex items-center gap-2 font-semibold text-white">
-            <x-application-logo class="h-8 w-auto fill-current text-white" />
-            <span>{{ config('app.name') }}</span>
+    <div class="h-16 flex items-center gap-2.5 px-6 border-b border-gray-800">
+        <a href="{{ route('dashboard') }}" class="flex items-center gap-2.5">
+            <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white/10 text-white shrink-0">
+                <x-brand-mark class="w-5 h-5" />
+            </span>
+            <span class="leading-tight">
+                <span class="block font-bold text-white tracking-tight">GADS</span>
+                <span class="block text-[11px] font-medium text-gray-400 uppercase tracking-wider">{{ __('Analysis Hub') }}</span>
+            </span>
         </a>
     </div>
 
