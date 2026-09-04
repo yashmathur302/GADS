@@ -3,9 +3,10 @@
         <x-admin.breadcrumbs :items="[
             ['label' => 'Assets & Creative Library'],
             ['label' => $type->label(), 'url' => route($baseRoute)],
-            ['label' => $industry->name],
+            ['label' => $industry->name, 'url' => route($baseRoute.'.industry', $industry)],
+            ['label' => $niche->name],
         ]" />
-        <h1 class="mt-1 font-semibold text-xl text-gray-800 leading-tight">{{ $industry->name }}</h1>
+        <h1 class="mt-1 font-semibold text-xl text-gray-800 leading-tight">{{ $niche->name }}</h1>
     </x-slot>
 
     <div class="space-y-6">
@@ -14,7 +15,7 @@
                 <div>
                     <p class="text-sm text-gray-500 mb-2">{{ __('Download this list as an Excel file.') }}</p>
                     <a
-                        href="{{ route($baseRoute.'.export', $industry) }}"
+                        href="{{ route($baseRoute.'.export', [$industry, $niche]) }}"
                         class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
                     >
                         {{ __('Export to Excel') }}
@@ -23,7 +24,7 @@
 
                 <div class="sm:text-right">
                     <p class="text-sm text-gray-500 mb-2">{{ __('Upload a .xlsx, .xls, or .csv file with a "Keyword" column (and optional "Notes").') }}</p>
-                    <form method="POST" action="{{ route($baseRoute.'.import', $industry) }}" enctype="multipart/form-data" class="flex flex-col sm:flex-row sm:items-center gap-2 sm:justify-end">
+                    <form method="POST" action="{{ route($baseRoute.'.import', [$industry, $niche]) }}" enctype="multipart/form-data" class="flex flex-col sm:flex-row sm:items-center gap-2 sm:justify-end">
                         @csrf
                         <input
                             type="file"
@@ -40,7 +41,7 @@
         </x-admin.card>
 
         <x-admin.card :title="__('Add :noun', ['noun' => $type->nounSingular()])">
-            <form method="POST" action="{{ route($baseRoute.'.store', $industry) }}" class="space-y-4">
+            <form method="POST" action="{{ route($baseRoute.'.store', [$industry, $niche]) }}" class="space-y-4">
                 @csrf
 
                 <div>
@@ -61,7 +62,7 @@
 
         <x-admin.card>
             @if ($entries->isEmpty())
-                <p class="text-sm text-gray-500">{{ __('No :noun yet for this industry.', ['noun' => $type->nounPlural()]) }}</p>
+                <p class="text-sm text-gray-500">{{ __('No :noun yet for this sub-category.', ['noun' => $type->nounPlural()]) }}</p>
             @else
                 <ul class="divide-y divide-gray-100">
                     @foreach ($entries as $entry)
@@ -73,7 +74,7 @@
                                 @endif
                             </div>
 
-                            <form method="POST" action="{{ route($baseRoute.'.destroy', [$industry, $entry]) }}" class="shrink-0" onsubmit="return confirm('{{ __('Remove this keyword?') }}');">
+                            <form method="POST" action="{{ route($baseRoute.'.destroy', [$industry, $niche, $entry]) }}" class="shrink-0" onsubmit="return confirm('{{ __('Remove this keyword?') }}');">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="text-sm text-red-600 hover:text-red-800 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">

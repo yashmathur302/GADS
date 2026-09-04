@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['industry_id', 'type', 'keyword', 'notes'])]
+#[Fillable(['niche_id', 'type', 'keyword', 'notes'])]
 class KeywordVaultEntry extends Model
 {
     /**
@@ -22,8 +22,8 @@ class KeywordVaultEntry extends Model
         ];
     }
 
-    public function industry(): BelongsTo
+    public function niche(): BelongsTo
     {
-        return $this->belongsTo(Industry::class);
+        return $this->belongsTo(Niche::class);
     }
 }

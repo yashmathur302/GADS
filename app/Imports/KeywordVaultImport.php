@@ -3,7 +3,7 @@
 namespace App\Imports;
 
 use App\Enums\KeywordVaultType;
-use App\Models\Industry;
+use App\Models\Niche;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
@@ -14,14 +14,14 @@ class KeywordVaultImport implements ToCollection, WithHeadingRow, WithValidation
     public int $imported = 0;
 
     public function __construct(
-        private readonly Industry $industry,
+        private readonly Niche $niche,
         private readonly KeywordVaultType $type,
     ) {}
 
     /**
      * Expects a "Keyword" column and an optional "Notes" column (matched
      * case-insensitively via WithHeadingRow). Existing keywords for this
-     * industry/type are left alone rather than duplicated.
+     * niche/type are left alone rather than duplicated.
      */
     public function collection(Collection $rows): void
     {
@@ -32,7 +32,7 @@ class KeywordVaultImport implements ToCollection, WithHeadingRow, WithValidation
                 continue;
             }
 
-            $entry = $this->industry->keywordVaultEntries()->firstOrCreate(
+            $entry = $this->niche->keywordVaultEntries()->firstOrCreate(
                 ['type' => $this->type, 'keyword' => $keyword],
                 ['notes' => trim((string) ($row['notes'] ?? '')) ?: null]
             );

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 #[Fillable(['name', 'slug'])]
 class Industry extends Model
@@ -20,8 +21,17 @@ class Industry extends Model
         return 'slug';
     }
 
-    public function keywordVaultEntries(): HasMany
+    public function niches(): HasMany
     {
-        return $this->hasMany(KeywordVaultEntry::class);
+        return $this->hasMany(Niche::class);
+    }
+
+    /**
+     * All keywords across every niche in this industry — used for the
+     * industry-level count on the vault index page.
+     */
+    public function keywordVaultEntries(): HasManyThrough
+    {
+        return $this->hasManyThrough(KeywordVaultEntry::class, Niche::class);
     }
 }

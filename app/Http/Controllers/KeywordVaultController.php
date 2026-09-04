@@ -9,6 +9,7 @@ use App\Http\Requests\StoreKeywordVaultEntryRequest;
 use App\Imports\KeywordVaultImport;
 use App\Models\Industry;
 use App\Models\KeywordVaultEntry;
+use App\Models\Niche;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
@@ -21,7 +22,8 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 class KeywordVaultController extends Controller
 {
     /**
-     * List every industry with how many entries of this vault type it has.
+     * List every industry with how many entries of this vault type it has,
+     * across all of that industry's sub-categories.
      */
     public function index(Request $request): View
     {
@@ -42,13 +44,37 @@ class KeywordVaultController extends Controller
     }
 
     /**
-     * List this industry's keywords for the given vault type.
+     * List this industry's sub-categories (niches), each with its keyword
+     * count for this vault type.
      */
-    public function show(Request $request, Industry $industry): View
+    public function showIndustry(Request $request, Industry $industry): View
     {
         $vaultType = $this->vaultType($request);
 
-        $entries = $industry->keywordVaultEntries()
+        $niches = $industry->niches()
+            ->withCount(['keywordVaultEntries' => function ($query) use ($vaultType) {
+                $query->where('type', $vaultType);
+            }])
+            ->orderBy('name')
+            ->get();
+
+        return view('keyword-vault.niches', [
+            'type' => $vaultType,
+            'baseRoute' => $this->baseRoute($vaultType),
+            'industry' => $industry,
+            'niches' => $niches,
+        ]);
+    }
+
+    /**
+     * List this niche's keywords for the given vault type.
+     */
+    public function show(Request $request, Industry $industry, Niche $niche): View
+    {
+        $vaultType = $this->vaultType($request);
+        $this->assertNicheBelongsToIndustry($industry, $niche);
+
+        $entries = $niche->keywordVaultEntries()
             ->where('type', $vaultType)
             ->orderBy('keyword')
             ->get();
@@ -57,82 +83,96 @@ class KeywordVaultController extends Controller
             'type' => $vaultType,
             'baseRoute' => $this->baseRoute($vaultType),
             'industry' => $industry,
+            'niche' => $niche,
             'entries' => $entries,
         ]);
     }
 
     /**
-     * Add a keyword to this industry's vault.
+     * Add a keyword to this niche's vault.
      */
-    public function store(StoreKeywordVaultEntryRequest $request, Industry $industry): RedirectResponse
+    public function store(StoreKeywordVaultEntryRequest $request, Industry $industry, Niche $niche): RedirectResponse
     {
         $vaultType = $this->vaultType($request);
+        $this->assertNicheBelongsToIndustry($industry, $niche);
 
-        $industry->keywordVaultEntries()->create([
+        $niche->keywordVaultEntries()->create([
             ...$request->validated(),
             'type' => $vaultType,
         ]);
 
-        return Redirect::route($this->baseRoute($vaultType).'.show', $industry)
+        return Redirect::route($this->baseRoute($vaultType).'.show', [$industry, $niche])
             ->with('success', 'Keyword added.');
     }
 
     /**
-     * Remove a keyword from this industry's vault.
+     * Remove a keyword from this niche's vault.
      */
-    public function destroy(Request $request, Industry $industry, KeywordVaultEntry $entry): RedirectResponse
+    public function destroy(Request $request, Industry $industry, Niche $niche, KeywordVaultEntry $entry): RedirectResponse
     {
         $vaultType = $this->vaultType($request);
+        $this->assertNicheBelongsToIndustry($industry, $niche);
 
-        // The entry must actually belong to this industry and vault type —
+        // The entry must actually belong to this niche and vault type —
         // never trust that a valid entry ID under any URL is fair game.
         abort_unless(
-            $entry->industry_id === $industry->id && $entry->type === $vaultType,
+            $entry->niche_id === $niche->id && $entry->type === $vaultType,
             404
         );
 
         $entry->delete();
 
-        return Redirect::route($this->baseRoute($vaultType).'.show', $industry)
+        return Redirect::route($this->baseRoute($vaultType).'.show', [$industry, $niche])
             ->with('success', 'Keyword removed.');
     }
 
     /**
-     * Download this industry's vault as an .xlsx file.
+     * Download this niche's vault as an .xlsx file.
      */
-    public function export(Request $request, Industry $industry): BinaryFileResponse
+    public function export(Request $request, Industry $industry, Niche $niche): BinaryFileResponse
     {
         $vaultType = $this->vaultType($request);
+        $this->assertNicheBelongsToIndustry($industry, $niche);
 
-        $entries = $industry->keywordVaultEntries()
+        $entries = $niche->keywordVaultEntries()
             ->where('type', $vaultType)
             ->orderBy('keyword')
             ->get();
 
-        $filename = Str::slug($industry->name).'-'.Str::slug($vaultType->nounPlural()).'.xlsx';
+        $filename = Str::slug($industry->name).'-'.Str::slug($niche->name).'-'.Str::slug($vaultType->nounPlural()).'.xlsx';
 
         return Excel::download(new KeywordVaultExport($entries), $filename);
     }
 
     /**
-     * Bulk-add keywords to this industry's vault from an uploaded .xlsx/
-     * .xls/.csv file (a "Keyword" column, and an optional "Notes" column).
+     * Bulk-add keywords to this niche's vault from an uploaded .xlsx/.xls/
+     * .csv file (a "Keyword" column, and an optional "Notes" column).
      */
-    public function import(ImportKeywordVaultRequest $request, Industry $industry): RedirectResponse
+    public function import(ImportKeywordVaultRequest $request, Industry $industry, Niche $niche): RedirectResponse
     {
         $vaultType = $this->vaultType($request);
+        $this->assertNicheBelongsToIndustry($industry, $niche);
 
-        $import = new KeywordVaultImport($industry, $vaultType);
+        $import = new KeywordVaultImport($niche, $vaultType);
 
         try {
             Excel::import($import, $request->file('file'));
         } catch (ExcelValidationException) {
-            return Redirect::route($this->baseRoute($vaultType).'.show', $industry)
+            return Redirect::route($this->baseRoute($vaultType).'.show', [$industry, $niche])
                 ->with('error', 'That file has one or more rows that are too long to import. Please fix and try again.');
         }
 
-        return Redirect::route($this->baseRoute($vaultType).'.show', $industry)
+        return Redirect::route($this->baseRoute($vaultType).'.show', [$industry, $niche])
             ->with('success', "Imported {$import->imported} keyword(s).");
+    }
+
+    /**
+     * A niche is bound by plain ID, not scoped to the industry in the URL —
+     * never trust that pairing without checking it.
+     */
+    private function assertNicheBelongsToIndustry(Industry $industry, Niche $niche): void
+    {
+        abort_unless($niche->industry_id === $industry->id, 404);
     }
 
     /**

@@ -37,13 +37,49 @@ class IndustrySeeder extends Seeder
         'Manufacturing & Industrial',
     ];
 
+    /**
+     * Sub-categories (niches) for industries broad enough that lumping all
+     * of their keywords together would mix unrelated searches. Industries
+     * not listed here get a single "General" niche so keywords can still
+     * be added right away — more niches can be added from the UI.
+     */
+    private const NICHES = [
+        'Healthcare & Medical' => [
+            'Dermatology Clinic',
+            'Pediatric Clinic',
+            'Hair Transplant Clinic',
+            'General Physician Clinic',
+            'Physiotherapy Clinic',
+            'Cosmetic & Plastic Surgery Clinic',
+            'Eye Care Clinic',
+            'Diagnostic & Pathology Lab',
+        ],
+        'Education & E-Learning' => [
+            'Preschool',
+            'Playschool',
+            'K-12 School (Class 1-12)',
+            'Music School',
+            'Online Tutoring',
+            'Test Prep & Coaching Classes',
+        ],
+    ];
+
     public function run(): void
     {
         foreach (self::INDUSTRIES as $name) {
-            Industry::firstOrCreate(
+            $industry = Industry::firstOrCreate(
                 ['slug' => Str::slug($name)],
                 ['name' => $name]
             );
+
+            $niches = self::NICHES[$name] ?? ['General'];
+
+            foreach ($niches as $nicheName) {
+                $industry->niches()->firstOrCreate(
+                    ['slug' => Str::slug($nicheName)],
+                    ['name' => $nicheName]
+                );
+            }
         }
     }
 }

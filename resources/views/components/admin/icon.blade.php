@@ -50,5 +50,22 @@
             <line x1="12" y1="7" x2="12" y2="12" />
             <line x1="12" y1="12" x2="15.5" y2="14" />
             @break
+
+        @case('trash')
+            <path d="M4 7h16" />
+            <path d="M6 7v13a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7" />
+            <path d="M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3" />
+            <line x1="10" y1="11" x2="10" y2="17" />
+            <line x1="14" y1="11" x2="14" y2="17" />
+            @break
+
+        @case('folder')
+            <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z" />
+            @break
+
+        @case('plus')
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+            @break
     @endswitch
 </svg>
