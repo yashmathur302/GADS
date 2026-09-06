@@ -23,7 +23,7 @@
                 </div>
 
                 <div class="max-w-xs">
-                    <x-input-label for="max_cpc_bid" :value="__('Max CPC bid (USD)')" />
+                    <x-input-label for="max_cpc_bid" :value="__('Max CPC bid (USD, optional)')" />
                     <div class="relative mt-1">
                         <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 text-sm">$</span>
                         <x-text-input
@@ -35,9 +35,10 @@
                             max="1000"
                             name="max_cpc_bid"
                             :value="old('max_cpc_bid', $maxCpcBid)"
-                            required
+                            placeholder="Suggested bid"
                         />
                     </div>
+                    <p class="mt-1.5 text-xs text-gray-500">{{ __("Leave blank to forecast at each keyword's own suggested bid.") }}</p>
                     <x-input-error :messages="$errors->get('max_cpc_bid')" class="mt-2" />
                 </div>
 

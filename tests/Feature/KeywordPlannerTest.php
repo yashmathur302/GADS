@@ -53,7 +53,7 @@ class KeywordPlannerTest extends TestCase
         $response->assertSessionHasErrors('keywords');
     }
 
-    public function test_max_cpc_bid_must_be_a_positive_number(): void
+    public function test_max_cpc_bid_must_be_a_positive_number_when_given(): void
     {
         $user = User::factory()->create();
 
@@ -63,6 +63,22 @@ class KeywordPlannerTest extends TestCase
         ]);
 
         $response->assertSessionHasErrors('max_cpc_bid');
+    }
+
+    public function test_max_cpc_bid_is_optional(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->post('/planner', [
+            'keywords' => 'emergency plumber',
+        ]);
+
+        $response->assertOk();
+        $response->assertSessionHasNoErrors();
+        $response->assertSeeText('emergency plumber');
+
+        $forecast = $response->viewData('results')->first();
+        $this->assertGreaterThan(0, $forecast->impressions);
     }
 
     public function test_raising_the_bid_does_not_decrease_forecast_clicks(): void

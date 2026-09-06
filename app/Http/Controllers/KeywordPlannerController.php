@@ -19,7 +19,7 @@ class KeywordPlannerController extends Controller
 
     public function forecast(KeywordPlannerForecastRequest $request, KeywordForecaster $forecaster): View
     {
-        $maxCpcBid = (float) $request->validated('max_cpc_bid');
+        $maxCpcBid = $request->maxCpcBid();
 
         $results = $forecaster->forecast($request->keywordList(), $maxCpcBid);
 

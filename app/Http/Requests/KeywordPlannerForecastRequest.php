@@ -16,7 +16,9 @@ class KeywordPlannerForecastRequest extends FormRequest
     {
         return [
             'keywords' => ['required', 'string', 'max:5000'],
-            'max_cpc_bid' => ['required', 'numeric', 'min:0.01', 'max:1000'],
+            // Optional — when left blank, each keyword forecasts at its own
+            // suggested bid (see SampleKeywordForecaster).
+            'max_cpc_bid' => ['nullable', 'numeric', 'min:0.01', 'max:1000'],
         ];
     }
 
@@ -34,5 +36,10 @@ class KeywordPlannerForecastRequest extends FormRequest
             ->take(20)
             ->values()
             ->all();
+    }
+
+    public function maxCpcBid(): ?float
+    {
+        return $this->filled('max_cpc_bid') ? (float) $this->input('max_cpc_bid') : null;
     }
 }

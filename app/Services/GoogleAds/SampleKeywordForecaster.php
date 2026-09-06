@@ -20,7 +20,7 @@ use Random\Randomizer;
  */
 class SampleKeywordForecaster implements KeywordForecaster
 {
-    public function forecast(array $keywords, float $maxCpcBid): Collection
+    public function forecast(array $keywords, ?float $maxCpcBid): Collection
     {
         return collect($keywords)
             ->map(fn (string $keyword) => trim($keyword))
@@ -30,12 +30,16 @@ class SampleKeywordForecaster implements KeywordForecaster
             ->map(fn (string $keyword) => $this->forecastOne($keyword, $maxCpcBid));
     }
 
-    private function forecastOne(string $keyword, float $maxCpcBid): KeywordForecast
+    private function forecastOne(string $keyword, ?float $maxCpcBid): KeywordForecast
     {
         $baseline = DeterministicKeywordMetrics::baseline($keyword);
         $marketCpc = $baseline['marketCpc'];
 
-        $bidRatio = $marketCpc > 0 ? $maxCpcBid / $marketCpc : 1;
+        // No bid set — assume this keyword's own suggested bid, the same
+        // default Google Ads' own Keyword Planner falls back to.
+        $effectiveBid = $maxCpcBid ?? $marketCpc;
+
+        $bidRatio = $marketCpc > 0 ? $effectiveBid / $marketCpc : 1;
         $impressionShare = min(1.0, $bidRatio ** 0.6);
         $impressions = (int) round($baseline['searchVolume'] * $impressionShare);
 
@@ -44,7 +48,7 @@ class SampleKeywordForecaster implements KeywordForecaster
         $clicks = (int) round($impressions * $ctr);
 
         $avgCpc = $clicks > 0
-            ? round(min($maxCpcBid, $marketCpc) * ($randomizer->getInt(75, 95) / 100), 2)
+            ? round(min($effectiveBid, $marketCpc) * ($randomizer->getInt(75, 95) / 100), 2)
             : 0.0;
 
         $cost = round($clicks * $avgCpc, 2);
