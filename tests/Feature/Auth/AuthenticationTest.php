@@ -27,7 +27,7 @@ class AuthenticationTest extends TestCase
         ]);
 
         $this->assertAuthenticated();
-        $response->assertRedirect(route('dashboard', absolute: false));
+        $response->assertRedirect(route('discover.index', absolute: false));
     }
 
     public function test_users_can_not_authenticate_with_invalid_password(): void
@@ -54,7 +54,7 @@ class AuthenticationTest extends TestCase
 
     public function test_unauthenticated_users_are_redirected_to_login(): void
     {
-        $response = $this->get('/dashboard');
+        $response = $this->get('/discover');
 
         $response->assertRedirect('/login');
     }

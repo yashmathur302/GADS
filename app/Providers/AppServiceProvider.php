@@ -2,6 +2,10 @@
 
 namespace App\Providers;
 
+use App\Services\GoogleAds\KeywordForecaster;
+use App\Services\GoogleAds\KeywordIdeaGenerator;
+use App\Services\GoogleAds\SampleKeywordForecaster;
+use App\Services\GoogleAds\SampleKeywordIdeaGenerator;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Auth\Events\Login;
@@ -19,7 +23,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Bound to sample-data implementations until real Google Ads API
+        // credentials exist (see README.md). Swap these bindings for real
+        // implementations backed by googleads/google-ads-php — nothing
+        // else in the app needs to change.
+        $this->app->bind(KeywordIdeaGenerator::class, SampleKeywordIdeaGenerator::class);
+        $this->app->bind(KeywordForecaster::class, SampleKeywordForecaster::class);
     }
 
     /**
