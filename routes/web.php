@@ -5,7 +5,10 @@ use App\Http\Controllers\KeywordPlannerController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
-Route::redirect('/', '/discover');
+// Not Route::redirect('/', '/discover') — that helper always generates a
+// bare root-relative Location header (bypassing URL::forceRootUrl), which
+// breaks apps deployed under a subfolder without document-root control.
+Route::get('/', fn () => redirect()->route('discover.index'));
 
 Route::middleware('auth')->group(function () {
     Route::get('/discover', [DiscoverKeywordsController::class, 'index'])->name('discover.index');

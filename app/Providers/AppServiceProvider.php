@@ -13,6 +13,7 @@ use Illuminate\Auth\Events\Logout;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -36,6 +37,15 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Some hosts (e.g. this app deployed under a subfolder like
+        // /gads/public on a shared cPanel account with no document-root
+        // control) don't let Symfony correctly auto-detect the app's base
+        // path from the request. Without this, redirects and generated
+        // URLs drop the subfolder prefix and point outside the app
+        // entirely. Forcing the root from APP_URL makes url()/route()/
+        // redirect() always include it, regardless of request detection.
+        URL::forceRootUrl(config('app.url'));
+
         Password::defaults(function () {
             $rule = Password::min(12)->mixedCase()->numbers()->symbols();
 
