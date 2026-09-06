@@ -48,6 +48,15 @@
 
                     <x-admin.targeting-controls :context="$context" />
 
+                    <div class="max-w-xs">
+                        <x-input-label for="date_range_months" :value="__('Date range')" />
+                        <select id="date_range_months" name="date_range_months" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                            @foreach ([12 => 'Past 12 months', 24 => 'Past 24 months', 36 => 'Past 36 months'] as $value => $label)
+                                <option value="{{ $value }}" @selected($dateRangeMonths === $value)>{{ __($label) }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
                     @if ($results !== null)
                         <div class="border-t border-gray-200 pt-4">
                             <p class="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">
@@ -94,6 +103,12 @@
                 </form>
             </div>
         </x-admin.card>
+
+        @if ($trend !== null)
+            <x-admin.card :title="__('Search interest over time')">
+                <x-admin.trend-chart :labels="$trend['labels']" :values="$trend['values']" />
+            </x-admin.card>
+        @endif
 
         @if ($results !== null)
             <x-admin.card :title="__('Keyword ideas')">

@@ -60,6 +60,31 @@ class DeterministicKeywordMetrics
         ];
     }
 
+    /**
+     * Month-by-month search volume, oldest to newest — the data behind
+     * Google Ads' own historical trend chart on the Discover page, and the
+     * basis for "avg. monthly searches" over a selected date range.
+     *
+     * @return int[]
+     */
+    public static function monthlySeries(string $keyword, SearchContext $context, int $months): array
+    {
+        $baseline = self::baseline($keyword, $context);
+        $seed = crc32(mb_strtolower(trim($keyword)).'|'.$context->cacheKey().'|monthly');
+        $engine = new Randomizer(new Mt19937($seed));
+        $phase = $engine->getInt(0, 11);
+
+        $series = [];
+
+        for ($i = 0; $i < $months; $i++) {
+            $seasonal = 1 + 0.3 * sin((M_PI / 6) * ($i + $phase));
+            $noise = $engine->getInt(85, 115) / 100;
+            $series[] = max(0, (int) round($baseline['searchVolume'] * $seasonal * $noise));
+        }
+
+        return $series;
+    }
+
     public static function competitionLabel(int $competitionIndex): string
     {
         return match (true) {

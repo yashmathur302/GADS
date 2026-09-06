@@ -13,8 +13,12 @@ interface KeywordIdeaGenerator
      * at least one must be given. Mirrors Google Ads'
      * KeywordPlanIdeaService.GenerateKeywordIdeas.
      *
+     * $dateRangeMonths sets the historical window (12/24/36 months, matching
+     * Google Ads' own Discover page) that "avg. monthly searches" is
+     * averaged over.
+     *
      * @param  string[]  $seedKeywords
      * @return Collection<int, KeywordIdea>
      */
-    public function generate(array $seedKeywords, ?string $pageUrl, SearchContext $context): Collection;
+    public function generate(array $seedKeywords, ?string $pageUrl, SearchContext $context, int $dateRangeMonths = 12): Collection;
 }

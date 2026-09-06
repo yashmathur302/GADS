@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Requests\DiscoverKeywordsRequest;
 use App\Services\GoogleAds\Data\SearchContext;
 use App\Services\GoogleAds\KeywordIdeaGenerator;
+use App\Services\GoogleAds\Support\DeterministicKeywordMetrics;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -25,6 +27,8 @@ class DiscoverKeywordsController extends Controller
             'dir' => 'desc',
             'minSearches' => 0,
             'competitionFilter' => [],
+            'dateRangeMonths' => 12,
+            'trend' => null,
             'seedKeywordsInput' => null,
             'websiteUrlInput' => null,
         ]);
@@ -33,6 +37,7 @@ class DiscoverKeywordsController extends Controller
     public function search(DiscoverKeywordsRequest $request, KeywordIdeaGenerator $generator): View
     {
         $results = $this->generateFiltered($request, $generator);
+        $dateRangeMonths = $request->dateRangeMonths();
 
         return view('discover.index', [
             'results' => $results,
@@ -41,6 +46,10 @@ class DiscoverKeywordsController extends Controller
             'dir' => $request->sortDirection(),
             'minSearches' => $request->minSearches(),
             'competitionFilter' => $request->competitionFilter(),
+            'dateRangeMonths' => $dateRangeMonths,
+            'trend' => $results->isNotEmpty()
+                ? $this->buildTrend($results, $request->searchContext(), $dateRangeMonths)
+                : null,
             // Rendered directly rather than via a redirect, so these have to
             // be handed back explicitly — old() only survives a redirect.
             'seedKeywordsInput' => $request->input('seed_keywords'),
@@ -79,9 +88,35 @@ class DiscoverKeywordsController extends Controller
             $request->seedKeywords(),
             $request->input('website_url') ?: null,
             $request->searchContext(),
+            $request->dateRangeMonths(),
         );
 
         return $this->filterAndSort($results, $request);
+    }
+
+    /**
+     * Aggregate month-by-month search volume across the displayed keyword
+     * ideas — the data behind the historical trend chart on Google Ads' own
+     * Discover page.
+     *
+     * @return array{labels: string[], values: int[]}
+     */
+    private function buildTrend(Collection $results, SearchContext $context, int $months): array
+    {
+        $totals = array_fill(0, $months, 0);
+
+        foreach ($results as $idea) {
+            foreach (DeterministicKeywordMetrics::monthlySeries($idea->keyword, $context, $months) as $i => $value) {
+                $totals[$i] += $value;
+            }
+        }
+
+        $labels = [];
+        for ($i = 0; $i < $months; $i++) {
+            $labels[] = Carbon::now()->subMonths($months - 1 - $i)->format('M Y');
+        }
+
+        return ['labels' => $labels, 'values' => $totals];
     }
 
     private function filterAndSort(Collection $results, DiscoverKeywordsRequest $request): Collection

@@ -39,7 +39,7 @@ class SampleKeywordIdeaGenerator implements KeywordIdeaGenerator
 
     private const MAX_RESULTS = 25;
 
-    public function generate(array $seedKeywords, ?string $pageUrl, SearchContext $context): Collection
+    public function generate(array $seedKeywords, ?string $pageUrl, SearchContext $context, int $dateRangeMonths = 12): Collection
     {
         $seeds = $this->resolveSeeds($seedKeywords, $pageUrl);
 
@@ -52,12 +52,18 @@ class SampleKeywordIdeaGenerator implements KeywordIdeaGenerator
             ->take(self::MAX_RESULTS)
             ->values();
 
-        return $keywords->map(function (string $keyword) use ($context) {
+        return $keywords->map(function (string $keyword) use ($context, $dateRangeMonths) {
             $baseline = DeterministicKeywordMetrics::baseline($keyword, $context);
+
+            // "Avg. monthly searches" is averaged over the selected
+            // historical window, same as Google Ads' own Discover page —
+            // competition and CPC are not date-range dependent.
+            $monthlySeries = DeterministicKeywordMetrics::monthlySeries($keyword, $context, $dateRangeMonths);
+            $avgMonthlySearches = (int) round(array_sum($monthlySeries) / count($monthlySeries));
 
             return new KeywordIdea(
                 keyword: $keyword,
-                avgMonthlySearches: $baseline['searchVolume'],
+                avgMonthlySearches: $avgMonthlySearches,
                 competition: DeterministicKeywordMetrics::competitionLabel($baseline['competitionIndex']),
                 competitionIndex: $baseline['competitionIndex'],
                 lowRangeCpc: round($baseline['marketCpc'] * 0.6, 2),

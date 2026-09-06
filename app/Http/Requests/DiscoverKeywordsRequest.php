@@ -29,6 +29,7 @@ class DiscoverKeywordsRequest extends FormRequest
             'min_searches' => ['nullable', 'integer', 'min:0'],
             'competition' => ['nullable', 'array'],
             'competition.*' => [Rule::in(['Low', 'Medium', 'High'])],
+            'date_range_months' => ['nullable', 'integer', Rule::in([12, 24, 36])],
             // "column:direction", e.g. "avg_monthly_searches:desc" — set by
             // clicking a sortable column header (see discover/index.blade.php).
             'sort_spec' => ['nullable', 'string', 'regex:/^[a-z_]+:(asc|desc)$/'],
@@ -89,5 +90,12 @@ class DiscoverKeywordsRequest extends FormRequest
     public function minSearches(): int
     {
         return (int) $this->input('min_searches', 0);
+    }
+
+    public function dateRangeMonths(): int
+    {
+        $months = (int) $this->input('date_range_months', 12);
+
+        return in_array($months, [12, 24, 36], true) ? $months : 12;
     }
 }

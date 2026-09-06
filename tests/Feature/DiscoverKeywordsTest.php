@@ -162,6 +162,60 @@ class DiscoverKeywordsTest extends TestCase
         $this->assertNull($tooLow);
     }
 
+    public function test_date_range_defaults_to_twelve_months_and_can_be_changed(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get('/discover');
+        $response->assertOk();
+        $response->assertSeeText('Past 12 months');
+
+        $twelve = $this->actingAs($user)->post('/discover', [
+            'seed_keywords' => 'drain cleaning',
+            'date_range_months' => 12,
+        ]);
+        $thirtySix = $this->actingAs($user)->post('/discover', [
+            'seed_keywords' => 'drain cleaning',
+            'date_range_months' => 36,
+        ]);
+
+        $twelve->assertOk();
+        $thirtySix->assertOk();
+        $this->assertNotSame(
+            $twelve->viewData('results')->first()->avgMonthlySearches,
+            $thirtySix->viewData('results')->first()->avgMonthlySearches,
+        );
+    }
+
+    public function test_invalid_date_range_is_rejected(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->post('/discover', [
+            'seed_keywords' => 'drain cleaning',
+            'date_range_months' => 18,
+        ]);
+
+        $response->assertSessionHasErrors('date_range_months');
+    }
+
+    public function test_search_interest_trend_is_shown_for_the_selected_date_range(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->post('/discover', [
+            'seed_keywords' => 'drain cleaning',
+            'date_range_months' => 24,
+        ]);
+
+        $response->assertOk();
+        $response->assertSeeText('Search interest over time');
+
+        $trend = $response->viewData('trend');
+        $this->assertCount(24, $trend['labels']);
+        $this->assertCount(24, $trend['values']);
+    }
+
     public function test_results_can_be_exported_to_csv(): void
     {
         $user = User::factory()->create();
