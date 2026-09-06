@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Support\Str;
-use Pdo\Mysql;
 
 return [
 
@@ -59,8 +58,12 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
+            // PDO::MYSQL_ATTR_SSL_CA (rather than the PHP 8.4-only Pdo\Mysql
+            // class constant) so this still works on PHP 8.3, which is what
+            // this app's composer.json actually requires — many hosts,
+            // cPanel shared hosting included, don't yet offer PHP 8.4.
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-                Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
         ],
 
@@ -79,8 +82,12 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
+            // PDO::MYSQL_ATTR_SSL_CA (rather than the PHP 8.4-only Pdo\Mysql
+            // class constant) so this still works on PHP 8.3, which is what
+            // this app's composer.json actually requires — many hosts,
+            // cPanel shared hosting included, don't yet offer PHP 8.4.
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-                Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
         ],
 
