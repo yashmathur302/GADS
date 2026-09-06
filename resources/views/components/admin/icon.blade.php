@@ -17,5 +17,28 @@
             <line x1="12" y1="11" x2="12" y2="16" />
             <circle cx="12" cy="7.75" r="0.75" fill="currentColor" stroke="none" />
             @break
+
+        @case('chevron-down')
+            <polyline points="6 9 12 15 18 9" />
+            @break
+
+        @case('chevron-up')
+            <polyline points="6 15 12 9 18 15" />
+            @break
+
+        @case('download')
+            <path d="M12 3v12" />
+            <polyline points="7 10 12 15 17 10" />
+            <path d="M4 19h16" />
+            @break
+
+        @case('sliders')
+            <line x1="4" y1="6" x2="20" y2="6" />
+            <circle cx="9" cy="6" r="2" fill="currentColor" stroke="none" />
+            <line x1="4" y1="12" x2="20" y2="12" />
+            <circle cx="15" cy="12" r="2" fill="currentColor" stroke="none" />
+            <line x1="4" y1="18" x2="20" y2="18" />
+            <circle cx="11" cy="18" r="2" fill="currentColor" stroke="none" />
+            @break
     @endswitch
 </svg>

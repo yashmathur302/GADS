@@ -10,6 +10,7 @@ final class KeywordForecast
 {
     public function __construct(
         public readonly string $keyword,
+        public readonly MatchType $matchType,
         public readonly int $impressions,
         public readonly int $clicks,
         public readonly float $avgCpc,

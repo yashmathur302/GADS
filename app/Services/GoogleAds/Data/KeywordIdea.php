@@ -15,5 +15,7 @@ final class KeywordIdea
         public readonly int $competitionIndex,
         public readonly float $lowRangeCpc,
         public readonly float $highRangeCpc,
+        public readonly int $threeMonthChange,
+        public readonly int $yoyChange,
     ) {}
 }

@@ -2,7 +2,11 @@
 
 namespace App\Services\GoogleAds;
 
+use App\Services\GoogleAds\Data\BidSweepPoint;
+use App\Services\GoogleAds\Data\DeviceBreakdown;
 use App\Services\GoogleAds\Data\KeywordForecast;
+use App\Services\GoogleAds\Data\MatchType;
+use App\Services\GoogleAds\Data\SearchContext;
 use App\Services\GoogleAds\Support\DeterministicKeywordMetrics;
 use Illuminate\Support\Collection;
 use Random\Engine\Mt19937;
@@ -20,20 +24,87 @@ use Random\Randomizer;
  */
 class SampleKeywordForecaster implements KeywordForecaster
 {
-    public function forecast(array $keywords, ?float $maxCpcBid): Collection
+    public function forecast(array $keywords, ?float $maxCpcBid, SearchContext $context, int $forecastDays): Collection
     {
         return collect($keywords)
             ->map(fn (string $keyword) => trim($keyword))
             ->filter()
             ->unique()
             ->values()
-            ->map(fn (string $keyword) => $this->forecastOne($keyword, $maxCpcBid));
+            ->map(fn (string $keyword) => $this->forecastOne($keyword, $maxCpcBid, $context, $forecastDays));
     }
 
-    private function forecastOne(string $keyword, ?float $maxCpcBid): KeywordForecast
+    public function bidSweep(array $keywords, SearchContext $context, int $forecastDays): Collection
     {
-        $baseline = DeterministicKeywordMetrics::baseline($keyword);
-        $marketCpc = $baseline['marketCpc'];
+        $cleanKeywords = collect($keywords)->map(fn (string $keyword) => trim($keyword))->filter()->unique()->values();
+
+        if ($cleanKeywords->isEmpty()) {
+            return collect();
+        }
+
+        $avgMarketCpc = $this->averageMarketCpc($cleanKeywords, $context);
+        $minBid = max(0.05, round($avgMarketCpc * 0.2, 2));
+        $maxBid = round($avgMarketCpc * 2.5, 2);
+        $steps = 12;
+
+        return collect(range(0, $steps))->map(function (int $step) use ($cleanKeywords, $context, $forecastDays, $minBid, $maxBid, $steps) {
+            $bid = round($minBid + ($maxBid - $minBid) * ($step / $steps), 2);
+
+            $forecasts = $cleanKeywords->map(
+                fn (string $keyword) => $this->forecastOne($keyword, $bid, $context, $forecastDays)
+            );
+
+            return new BidSweepPoint(
+                bid: $bid,
+                clicks: (int) $forecasts->sum('clicks'),
+                cost: round($forecasts->sum('cost'), 2),
+            );
+        });
+    }
+
+    public function suggestedBid(array $keywords, SearchContext $context): float
+    {
+        $cleanKeywords = collect($keywords)->map(fn (string $keyword) => trim($keyword))->filter()->unique()->values();
+
+        return $cleanKeywords->isEmpty() ? 0.0 : round($this->averageMarketCpc($cleanKeywords, $context), 2);
+    }
+
+    /**
+     * @param  Collection<int, string>  $keywords
+     */
+    private function averageMarketCpc(Collection $keywords, SearchContext $context): float
+    {
+        return (float) $keywords->map(function (string $rawKeyword) use ($context) {
+            [$keyword, $matchType] = MatchType::parse($rawKeyword);
+            $baseline = DeterministicKeywordMetrics::baseline($keyword, $context);
+
+            return $baseline['marketCpc'] * $matchType->cpcFactor();
+        })->avg();
+    }
+
+    public function deviceBreakdown(array $keywords, SearchContext $context): DeviceBreakdown
+    {
+        $key = collect($keywords)->map(fn (string $keyword) => trim(mb_strtolower($keyword)))->filter()->sort()->implode('|');
+        $randomizer = new Randomizer(new Mt19937(crc32('device:'.$key.'|'.$context->cacheKey())));
+
+        $desktop = $randomizer->getInt(30, 45);
+        $tablet = $randomizer->getInt(5, 15);
+        $mobile = 100 - $desktop - $tablet;
+
+        return new DeviceBreakdown(
+            desktopPercent: (float) $desktop,
+            mobilePercent: (float) $mobile,
+            tabletPercent: (float) $tablet,
+        );
+    }
+
+    private function forecastOne(string $rawKeyword, ?float $maxCpcBid, SearchContext $context, int $forecastDays): KeywordForecast
+    {
+        [$keyword, $matchType] = MatchType::parse($rawKeyword);
+
+        $baseline = DeterministicKeywordMetrics::baseline($keyword, $context);
+        $marketCpc = round($baseline['marketCpc'] * $matchType->cpcFactor(), 2);
+        $searchVolume = (int) round($baseline['searchVolume'] * $matchType->volumeFactor());
 
         // No bid set — assume this keyword's own suggested bid, the same
         // default Google Ads' own Keyword Planner falls back to.
@@ -41,9 +112,11 @@ class SampleKeywordForecaster implements KeywordForecaster
 
         $bidRatio = $marketCpc > 0 ? $effectiveBid / $marketCpc : 1;
         $impressionShare = min(1.0, $bidRatio ** 0.6);
-        $impressions = (int) round($baseline['searchVolume'] * $impressionShare);
 
-        $randomizer = new Randomizer(new Mt19937(crc32('forecast:'.mb_strtolower($keyword))));
+        $dayFraction = max(0, $forecastDays) / 30;
+        $impressions = (int) round($searchVolume * $impressionShare * $dayFraction);
+
+        $randomizer = new Randomizer(new Mt19937(crc32('forecast:'.mb_strtolower($keyword).'|'.$matchType->value.'|'.$context->cacheKey())));
         $ctr = $randomizer->getInt(200, 800) / 10000; // a stable 2%-8% CTR for this keyword
         $clicks = (int) round($impressions * $ctr);
 
@@ -55,6 +128,7 @@ class SampleKeywordForecaster implements KeywordForecaster
 
         return new KeywordForecast(
             keyword: $keyword,
+            matchType: $matchType,
             impressions: $impressions,
             clicks: $clicks,
             avgCpc: $avgCpc,

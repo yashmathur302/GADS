@@ -132,4 +132,95 @@ class KeywordPlannerTest extends TestCase
         $response->assertOk();
         $this->assertCount(20, $response->viewData('results'));
     }
+
+    public function test_match_type_syntax_is_parsed_and_shown(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->post('/planner', [
+            'keywords' => "plumber\n\"plumber\"\n[plumber]",
+            'max_cpc_bid' => 5,
+        ]);
+
+        $results = $response->viewData('results');
+
+        $this->assertSame(['Broad', 'Phrase', 'Exact'], $results->pluck('matchType.value')->all());
+        // The bracket/quote match-type syntax should be stripped from the
+        // parsed keyword itself, even though the textarea (a separate part
+        // of the page) still shows what was typed, brackets and all.
+        $this->assertSame(['plumber', 'plumber', 'plumber'], $results->pluck('keyword')->all());
+    }
+
+    public function test_forecast_period_scales_the_results(): void
+    {
+        $user = User::factory()->create();
+
+        $sevenDays = $this->actingAs($user)->post('/planner', [
+            'keywords' => 'emergency plumber',
+            'max_cpc_bid' => 5,
+            'forecast_days' => 7,
+        ])->viewData('results')->first();
+
+        $thirtyDays = $this->actingAs($user)->post('/planner', [
+            'keywords' => 'emergency plumber',
+            'max_cpc_bid' => 5,
+            'forecast_days' => 30,
+        ])->viewData('results')->first();
+
+        $this->assertGreaterThan($sevenDays->impressions, $thirtyDays->impressions);
+    }
+
+    public function test_device_breakdown_percentages_add_up_to_100(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->post('/planner', [
+            'keywords' => 'emergency plumber',
+            'max_cpc_bid' => 5,
+        ]);
+
+        $breakdown = $response->viewData('deviceBreakdown');
+
+        $this->assertEqualsWithDelta(
+            100,
+            $breakdown->desktopPercent + $breakdown->mobilePercent + $breakdown->tabletPercent,
+            0.01
+        );
+    }
+
+    public function test_bid_sweep_clicks_generally_rise_with_bid(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->post('/planner', [
+            'keywords' => 'emergency plumber',
+            'max_cpc_bid' => 5,
+        ]);
+
+        $sweep = $response->viewData('bidSweep');
+
+        $this->assertGreaterThanOrEqual($sweep->first()->clicks, $sweep->last()->clicks);
+    }
+
+    public function test_forecast_can_be_exported_to_csv(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->post('/planner/export', [
+            'keywords' => 'emergency plumber',
+            'max_cpc_bid' => 5,
+        ]);
+
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
+
+        $rows = str_getcsv($response->streamedContent(), "\n");
+        $this->assertStringContainsString('Keyword', $rows[0]);
+        $this->assertStringContainsString('Match Type', $rows[0]);
+    }
+
+    public function test_export_requires_authentication(): void
+    {
+        $this->post('/planner/export')->assertRedirect('/login');
+    }
 }

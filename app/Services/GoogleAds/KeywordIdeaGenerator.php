@@ -3,6 +3,7 @@
 namespace App\Services\GoogleAds;
 
 use App\Services\GoogleAds\Data\KeywordIdea;
+use App\Services\GoogleAds\Data\SearchContext;
 use Illuminate\Support\Collection;
 
 interface KeywordIdeaGenerator
@@ -15,5 +16,5 @@ interface KeywordIdeaGenerator
      * @param  string[]  $seedKeywords
      * @return Collection<int, KeywordIdea>
      */
-    public function generate(array $seedKeywords, ?string $pageUrl): Collection;
+    public function generate(array $seedKeywords, ?string $pageUrl, SearchContext $context): Collection;
 }

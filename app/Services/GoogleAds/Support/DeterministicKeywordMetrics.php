@@ -2,14 +2,16 @@
 
 namespace App\Services\GoogleAds\Support;
 
+use App\Services\GoogleAds\Data\SearchContext;
 use Random\Engine\Mt19937;
 use Random\Randomizer;
 
 /**
  * Derives stable, believable-looking baseline metrics for a keyword from a
- * hash of its text — the same keyword always yields the same numbers, so
- * results feel consistent between the Discover and Planner tools and across
- * repeated searches, without needing to persist anything.
+ * hash of its text and search context (language/location/network) — the
+ * same keyword+context always yields the same numbers, so results feel
+ * consistent between the Discover and Planner tools and across repeated
+ * searches, without needing to persist anything.
  *
  * This exists only because there is no live Google Ads API connection yet
  * (see App\Services\GoogleAds\*Interface for the swap-in point). None of
@@ -18,16 +20,17 @@ use Random\Randomizer;
 class DeterministicKeywordMetrics
 {
     /**
-     * @return array{searchVolume: int, marketCpc: float, competitionIndex: int}
+     * @return array{searchVolume: int, marketCpc: float, competitionIndex: int, threeMonthChange: int, yoyChange: int}
      */
-    public static function baseline(string $keyword): array
+    public static function baseline(string $keyword, ?SearchContext $context = null): array
     {
-        $seed = crc32(mb_strtolower(trim($keyword)));
+        $context ??= new SearchContext;
+        $normalized = mb_strtolower(trim($keyword));
+        $seed = crc32($normalized.'|'.$context->cacheKey());
 
         // A local, seeded generator so this never disturbs global PHP RNG
         // state (e.g. other code relying on mt_rand/random_int elsewhere).
-        $random = new Mt19937($seed);
-        $engine = new Randomizer($random);
+        $engine = new Randomizer(new Mt19937($seed));
 
         $competitionIndex = $engine->getInt(1, 100);
 
@@ -38,12 +41,22 @@ class DeterministicKeywordMetrics
         $volumeCeiling = (int) max(50, 40000 / $wordCount);
         $searchVolume = $engine->getInt(10, $volumeCeiling);
 
+        $searchVolume = (int) round($searchVolume * Locations::sizeFactor($context->location));
+
+        if ($context->includeSearchPartners) {
+            $searchVolume = (int) round($searchVolume * 1.15);
+        }
+
         $marketCpc = round($engine->getInt(50, 50 + $competitionIndex * 15) / 100, 2);
 
         return [
-            'searchVolume' => $searchVolume,
+            'searchVolume' => max(0, $searchVolume),
             'marketCpc' => $marketCpc,
             'competitionIndex' => $competitionIndex,
+            // Percent change vs. the prior 3 months / same month last year —
+            // shown as trend columns in Google's own Discover tool.
+            'threeMonthChange' => $engine->getInt(-40, 60),
+            'yoyChange' => $engine->getInt(-60, 120),
         ];
     }
 

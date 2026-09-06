@@ -3,6 +3,7 @@
 namespace App\Services\GoogleAds;
 
 use App\Services\GoogleAds\Data\KeywordIdea;
+use App\Services\GoogleAds\Data\SearchContext;
 use App\Services\GoogleAds\Support\DeterministicKeywordMetrics;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -38,7 +39,7 @@ class SampleKeywordIdeaGenerator implements KeywordIdeaGenerator
 
     private const MAX_RESULTS = 25;
 
-    public function generate(array $seedKeywords, ?string $pageUrl): Collection
+    public function generate(array $seedKeywords, ?string $pageUrl, SearchContext $context): Collection
     {
         $seeds = $this->resolveSeeds($seedKeywords, $pageUrl);
 
@@ -51,8 +52,8 @@ class SampleKeywordIdeaGenerator implements KeywordIdeaGenerator
             ->take(self::MAX_RESULTS)
             ->values();
 
-        return $keywords->map(function (string $keyword) {
-            $baseline = DeterministicKeywordMetrics::baseline($keyword);
+        return $keywords->map(function (string $keyword) use ($context) {
+            $baseline = DeterministicKeywordMetrics::baseline($keyword, $context);
 
             return new KeywordIdea(
                 keyword: $keyword,
@@ -61,6 +62,8 @@ class SampleKeywordIdeaGenerator implements KeywordIdeaGenerator
                 competitionIndex: $baseline['competitionIndex'],
                 lowRangeCpc: round($baseline['marketCpc'] * 0.6, 2),
                 highRangeCpc: round($baseline['marketCpc'] * 1.4, 2),
+                threeMonthChange: $baseline['threeMonthChange'],
+                yoyChange: $baseline['yoyChange'],
             );
         });
     }

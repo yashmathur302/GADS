@@ -10,9 +10,11 @@ Route::redirect('/', '/discover');
 Route::middleware('auth')->group(function () {
     Route::get('/discover', [DiscoverKeywordsController::class, 'index'])->name('discover.index');
     Route::post('/discover', [DiscoverKeywordsController::class, 'search'])->name('discover.search');
+    Route::post('/discover/export', [DiscoverKeywordsController::class, 'export'])->name('discover.export');
 
     Route::get('/planner', [KeywordPlannerController::class, 'index'])->name('planner.index');
     Route::post('/planner', [KeywordPlannerController::class, 'forecast'])->name('planner.forecast');
+    Route::post('/planner/export', [KeywordPlannerController::class, 'export'])->name('planner.export');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

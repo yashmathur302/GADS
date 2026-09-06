@@ -7,7 +7,7 @@
         <x-admin.sample-data-notice />
 
         <x-admin.card :title="__('Get forecasts')">
-            <form method="POST" action="{{ route('planner.forecast') }}" class="space-y-4">
+            <form method="POST" action="{{ route('planner.forecast') }}" id="planner-form" class="space-y-4">
                 @csrf
 
                 <div>
@@ -17,32 +17,62 @@
                         name="keywords"
                         rows="5"
                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm font-mono"
-                        placeholder="emergency plumber&#10;drain cleaning service&#10;24 hour plumber"
+                        placeholder="emergency plumber&#10;&quot;drain cleaning service&quot;&#10;[24 hour plumber]"
                     >{{ old('keywords', $keywordsInput) }}</textarea>
+                    <p class="mt-1.5 text-xs text-gray-500">
+                        {{ __('Match types, same as Google Ads: [exact], "phrase", or bare text for broad.') }}
+                    </p>
                     <x-input-error :messages="$errors->get('keywords')" class="mt-2" />
                 </div>
 
-                <div class="max-w-xs">
-                    <x-input-label for="max_cpc_bid" :value="__('Max CPC bid (USD, optional)')" />
-                    <div class="relative mt-1">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 text-sm">$</span>
-                        <x-text-input
-                            id="max_cpc_bid"
-                            class="block w-full pl-6"
-                            type="number"
-                            step="0.01"
-                            min="0.01"
-                            max="1000"
-                            name="max_cpc_bid"
-                            :value="old('max_cpc_bid', $maxCpcBid)"
-                            placeholder="Suggested bid"
-                        />
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg">
+                    <div>
+                        <x-input-label for="max_cpc_bid" :value="__('Max CPC bid (USD, optional)')" />
+                        <div class="relative mt-1">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 text-sm">$</span>
+                            <x-text-input
+                                id="max_cpc_bid"
+                                class="block w-full pl-6"
+                                type="number"
+                                step="0.01"
+                                min="0.01"
+                                max="1000"
+                                name="max_cpc_bid"
+                                :value="old('max_cpc_bid', $maxCpcBid)"
+                                placeholder="Suggested bid"
+                            />
+                        </div>
+                        <p class="mt-1.5 text-xs text-gray-500">{{ __("Leave blank to forecast at each keyword's own suggested bid.") }}</p>
+                        <x-input-error :messages="$errors->get('max_cpc_bid')" class="mt-2" />
                     </div>
-                    <p class="mt-1.5 text-xs text-gray-500">{{ __("Leave blank to forecast at each keyword's own suggested bid.") }}</p>
-                    <x-input-error :messages="$errors->get('max_cpc_bid')" class="mt-2" />
+
+                    <div>
+                        <x-input-label for="forecast_days" :value="__('Forecast period')" />
+                        <select id="forecast_days" name="forecast_days" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                            @foreach ([7 => 'Next 7 days', 14 => 'Next 14 days', 30 => 'Next 30 days'] as $value => $label)
+                                <option value="{{ $value }}" @selected($forecastDays === $value)>{{ __($label) }}</option>
+                            @endforeach
+                        </select>
+                    </div>
                 </div>
 
-                <x-primary-button>{{ __('Get forecast') }}</x-primary-button>
+                <x-admin.targeting-controls :context="$context" />
+
+                <div class="flex items-center gap-3">
+                    <x-primary-button>{{ __('Get forecast') }}</x-primary-button>
+
+                    @if ($results !== null && $results->isNotEmpty())
+                        <button
+                            type="submit"
+                            form="planner-form"
+                            formaction="{{ route('planner.export') }}"
+                            class="inline-flex items-center gap-1.5 px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition"
+                        >
+                            <x-admin.icon name="download" class="w-3.5 h-3.5" />
+                            {{ __('Export to CSV') }}
+                        </button>
+                    @endif
+                </div>
             </form>
         </x-admin.card>
 
@@ -73,6 +103,18 @@
                 </x-admin.card>
             </div>
 
+            @if ($bidSweep !== null && $bidSweep->isNotEmpty())
+                <x-admin.card :title="__('Forecast by bid')">
+                    <x-admin.forecast-chart :points="$bidSweep" :marker-bid="$markerBid" />
+                </x-admin.card>
+            @endif
+
+            @if ($deviceBreakdown !== null && $totalImpressions > 0)
+                <x-admin.card :title="__('Devices')">
+                    <x-admin.device-breakdown :breakdown="$deviceBreakdown" />
+                </x-admin.card>
+            @endif
+
             <x-admin.card :title="__('By keyword')">
                 @if ($results->isEmpty())
                     <p class="text-sm text-gray-500">{{ __('Enter at least one keyword above to see a forecast.') }}</p>
@@ -82,6 +124,7 @@
                             <thead>
                                 <tr class="text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
                                     <th class="px-4 sm:px-6 py-2">{{ __('Keyword') }}</th>
+                                    <th class="px-4 py-2">{{ __('Match type') }}</th>
                                     <th class="px-4 py-2">{{ __('Impressions') }}</th>
                                     <th class="px-4 py-2">{{ __('Clicks') }}</th>
                                     <th class="px-4 py-2">{{ __('Avg. CPC') }}</th>
@@ -92,6 +135,7 @@
                                 @foreach ($results as $forecast)
                                     <tr>
                                         <td class="px-4 sm:px-6 py-2.5 font-medium text-gray-900">{{ $forecast->keyword }}</td>
+                                        <td class="px-4 py-2.5 text-gray-500">{{ $forecast->matchType->value }}</td>
                                         <td class="px-4 py-2.5 text-gray-600">{{ number_format($forecast->impressions) }}</td>
                                         <td class="px-4 py-2.5 text-gray-600">{{ number_format($forecast->clicks) }}</td>
                                         <td class="px-4 py-2.5 text-gray-600">${{ number_format($forecast->avgCpc, 2) }}</td>

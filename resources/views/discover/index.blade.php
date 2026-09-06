@@ -7,7 +7,7 @@
         <x-admin.sample-data-notice />
 
         <x-admin.card>
-            <div x-data="{ mode: {{ old('website_url') ? "'website'" : "'keywords'" }} }">
+            <div x-data="{ mode: {{ $websiteUrlInput ? "'website'" : "'keywords'" }} }">
                 <div class="flex gap-1 border-b border-gray-200 mb-6" role="tablist">
                     <button
                         type="button"
@@ -31,22 +31,66 @@
                     </button>
                 </div>
 
-                <form method="POST" action="{{ route('discover.search') }}" class="space-y-4">
+                <form method="POST" action="{{ route('discover.search') }}" id="discover-form" class="space-y-4">
                     @csrf
 
                     <div x-show="mode === 'keywords'">
                         <x-input-label for="seed_keywords" :value="__('Enter keywords, separated by commas')" />
-                        <x-text-input id="seed_keywords" class="block mt-1 w-full" type="text" name="seed_keywords" :value="old('seed_keywords')" placeholder="e.g. emergency plumber, drain cleaning" />
+                        <x-text-input id="seed_keywords" class="block mt-1 w-full" type="text" name="seed_keywords" :value="$seedKeywordsInput" placeholder="e.g. emergency plumber, drain cleaning" />
                         <x-input-error :messages="$errors->get('seed_keywords')" class="mt-2" />
                     </div>
 
                     <div x-show="mode === 'website'" style="display: none;">
                         <x-input-label for="website_url" :value="__('Enter your website URL')" />
-                        <x-text-input id="website_url" class="block mt-1 w-full" type="url" name="website_url" :value="old('website_url')" placeholder="https://example.com/plumbing-services" />
+                        <x-text-input id="website_url" class="block mt-1 w-full" type="url" name="website_url" :value="$websiteUrlInput" placeholder="https://example.com/plumbing-services" />
                         <x-input-error :messages="$errors->get('website_url')" class="mt-2" />
                     </div>
 
-                    <x-primary-button>{{ __('Get results') }}</x-primary-button>
+                    <x-admin.targeting-controls :context="$context" />
+
+                    @if ($results !== null)
+                        <div class="border-t border-gray-200 pt-4">
+                            <p class="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">
+                                <x-admin.icon name="sliders" class="w-3.5 h-3.5" />
+                                {{ __('Refine results') }}
+                            </p>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div class="max-w-xs">
+                                    <x-input-label for="min_searches" :value="__('Min. avg. monthly searches')" />
+                                    <x-text-input id="min_searches" class="block mt-1 w-full" type="number" min="0" name="min_searches" :value="$minSearches ?: null" placeholder="0" />
+                                </div>
+
+                                <div>
+                                    <x-input-label :value="__('Competition')" />
+                                    <div class="mt-1.5 flex items-center gap-4">
+                                        @foreach (['Low', 'Medium', 'High'] as $level)
+                                            <label class="flex items-center gap-1.5 text-sm text-gray-700">
+                                                <input type="checkbox" name="competition[]" value="{{ $level }}" @checked(in_array($level, $competitionFilter, true)) class="rounded border-gray-300 text-slate-700 focus:ring-slate-600">
+                                                {{ __($level) }}
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
+                    <div class="flex items-center gap-3">
+                        <x-primary-button>{{ __($results !== null ? 'Update results' : 'Get results') }}</x-primary-button>
+
+                        @if ($results !== null && $results->isNotEmpty())
+                            <button
+                                type="submit"
+                                form="discover-form"
+                                formaction="{{ route('discover.export') }}"
+                                class="inline-flex items-center gap-1.5 px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition"
+                            >
+                                <x-admin.icon name="download" class="w-3.5 h-3.5" />
+                                {{ __('Export to CSV') }}
+                            </button>
+                        @endif
+                    </div>
                 </form>
             </div>
         </x-admin.card>
@@ -54,18 +98,20 @@
         @if ($results !== null)
             <x-admin.card :title="__('Keyword ideas')">
                 @if ($results->isEmpty())
-                    <p class="text-sm text-gray-500">{{ __('No keyword ideas found. Try different keywords or a different page.') }}</p>
+                    <p class="text-sm text-gray-500">{{ __('No keyword ideas match your filters. Try widening the search volume or competition filters.') }}</p>
                 @else
                     <div class="overflow-x-auto -mx-4 sm:-mx-6">
                         <table class="min-w-full divide-y divide-gray-200 text-sm">
                             <thead>
-                                <tr class="text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                                    <th class="px-4 sm:px-6 py-2">{{ __('Keyword') }}</th>
-                                    <th class="px-4 py-2">{{ __('Avg. monthly searches') }}</th>
-                                    <th class="px-4 py-2">{{ __('Competition') }}</th>
-                                    <th class="px-4 py-2">{{ __('Competition index') }}</th>
-                                    <th class="px-4 py-2">{{ __('Low range CPC') }}</th>
-                                    <th class="px-4 sm:px-6 py-2">{{ __('High range CPC') }}</th>
+                                <tr class="text-left text-xs">
+                                    <x-admin.sortable-th column="keyword" :sort="$sort" :dir="$dir" form="discover-form" class="px-4 sm:px-6">{{ __('Keyword') }}</x-admin.sortable-th>
+                                    <x-admin.sortable-th column="avg_monthly_searches" :sort="$sort" :dir="$dir" form="discover-form">{{ __('Avg. monthly searches') }}</x-admin.sortable-th>
+                                    <th class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">{{ __('3 mo. change') }}</th>
+                                    <th class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">{{ __('YoY change') }}</th>
+                                    <th class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">{{ __('Competition') }}</th>
+                                    <x-admin.sortable-th column="competition_index" :sort="$sort" :dir="$dir" form="discover-form">{{ __('Competition index') }}</x-admin.sortable-th>
+                                    <x-admin.sortable-th column="low_range_cpc" :sort="$sort" :dir="$dir" form="discover-form">{{ __('Low range CPC') }}</x-admin.sortable-th>
+                                    <x-admin.sortable-th column="high_range_cpc" :sort="$sort" :dir="$dir" form="discover-form" class="px-4 sm:px-6">{{ __('High range CPC') }}</x-admin.sortable-th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-100">
@@ -73,6 +119,16 @@
                                     <tr>
                                         <td class="px-4 sm:px-6 py-2.5 font-medium text-gray-900">{{ $idea->keyword }}</td>
                                         <td class="px-4 py-2.5 text-gray-600">{{ number_format($idea->avgMonthlySearches) }}</td>
+                                        <td class="px-4 py-2.5">
+                                            <span class="{{ $idea->threeMonthChange >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                                                {{ $idea->threeMonthChange >= 0 ? '+' : '' }}{{ $idea->threeMonthChange }}%
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-2.5">
+                                            <span class="{{ $idea->yoyChange >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                                                {{ $idea->yoyChange >= 0 ? '+' : '' }}{{ $idea->yoyChange }}%
+                                            </span>
+                                        </td>
                                         <td class="px-4 py-2.5">
                                             <span @class([
                                                 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium',
