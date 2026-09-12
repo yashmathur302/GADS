@@ -7,7 +7,7 @@ use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class StoreClientRequest extends FormRequest
+class UpdateClientRequest extends FormRequest
 {
     use RedirectsToClientContext;
 
@@ -29,9 +29,6 @@ class StoreClientRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'industry_category' => ['required', 'string', 'max:255'],
-            // Which tab to return to after creating the client. Validated
-            // against a fixed allowlist (not used as a raw URL) so this
-            // can never become an open-redirect vector.
             'context' => ['required', Rule::in(['keywords', 'negative-keywords'])],
         ];
     }

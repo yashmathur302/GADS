@@ -26,6 +26,8 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
 
     Route::post('/clients', [ClientController::class, 'store'])->name('clients.store');
+    Route::patch('/clients/{client}', [ClientController::class, 'update'])->name('clients.update');
+    Route::delete('/clients/{client}', [ClientController::class, 'destroy'])->name('clients.destroy');
 
     Route::prefix('keywords')->name('keywords.')->group(function () {
         Route::get('/', [KeywordController::class, 'index'])->name('index');

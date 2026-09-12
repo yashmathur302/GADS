@@ -50,19 +50,57 @@
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     @foreach ($clients as $client)
-                        <tr>
-                            <td class="px-4 sm:px-6 py-2.5 font-medium text-gray-900">{{ $client->name }}</td>
-                            <td class="px-4 py-2.5 text-gray-600">{{ $client->industry_category }}</td>
+                        <tr x-data="{ editing: false }">
+                            <td class="px-4 sm:px-6 py-2.5">
+                                <span x-show="!editing" class="font-medium text-gray-900">{{ $client->name }}</span>
+                                <input
+                                    x-show="editing" style="display: none;"
+                                    type="text" form="edit-client-{{ $client->id }}" name="name" value="{{ $client->name }}" required
+                                    class="block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                >
+                            </td>
+                            <td class="px-4 py-2.5">
+                                <span x-show="!editing" class="text-gray-600">{{ $client->industry_category }}</span>
+                                <input
+                                    x-show="editing" style="display: none;"
+                                    type="text" form="edit-client-{{ $client->id }}" name="industry_category" value="{{ $client->industry_category }}" required
+                                    class="block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                >
+                            </td>
                             <td class="px-4 py-2.5 text-gray-600">{{ number_format($client->{$countKey}) }}</td>
-                            <td class="px-4 sm:px-6 py-2.5 text-right">
-                                <a href="{{ route($showRoute, $client) }}" class="text-slate-700 hover:text-slate-900 font-medium">
-                                    {{ __('View Details') }}
-                                </a>
+                            <td class="px-4 sm:px-6 py-2.5 text-right whitespace-nowrap">
+                                <span x-show="!editing" class="space-x-3">
+                                    <a href="{{ route($showRoute, $client) }}" class="text-slate-700 hover:text-slate-900 font-medium">{{ __('View Details') }}</a>
+                                    <button type="button" @click="editing = true" class="text-slate-500 hover:text-slate-900 font-medium">{{ __('Edit') }}</button>
+                                    <button type="submit" form="delete-client-{{ $client->id }}" class="text-red-600 hover:text-red-800 font-medium">{{ __('Delete') }}</button>
+                                </span>
+                                <span x-show="editing" style="display: none;" class="space-x-3">
+                                    <button type="submit" form="edit-client-{{ $client->id }}" class="text-slate-700 hover:text-slate-900 font-medium">{{ __('Save') }}</button>
+                                    <button type="button" @click="editing = false" class="text-gray-500 hover:text-gray-700 font-medium">{{ __('Cancel') }}</button>
+                                </span>
                             </td>
                         </tr>
                     @endforeach
                 </tbody>
             </table>
         </div>
+
+        {{-- One hidden form per client for Edit/Delete, referenced by the buttons above via the `form="..."` attribute — kept outside the table body so a stray <form> tag never disturbs the table's markup. --}}
+        @foreach ($clients as $client)
+            <form id="edit-client-{{ $client->id }}" method="POST" action="{{ route('clients.update', $client) }}" class="hidden">
+                @csrf
+                @method('PATCH')
+                <input type="hidden" name="context" value="{{ $context }}">
+            </form>
+            <form
+                id="delete-client-{{ $client->id }}" method="POST" action="{{ route('clients.destroy', $client) }}" class="hidden"
+                x-data
+                x-on:submit="if (!confirm('{{ __('Delete this client? This also permanently deletes its keyword AND negative keyword lists. This cannot be undone.') }}')) $event.preventDefault()"
+            >
+                @csrf
+                @method('DELETE')
+                <input type="hidden" name="context" value="{{ $context }}">
+            </form>
+        @endforeach
     @endif
 </div>
