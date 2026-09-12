@@ -35,6 +35,6 @@ class StoreClientRequest extends FormRequest
 
     public function redirectRouteName(): string
     {
-        return $this->string('context') === 'negative-keywords' ? 'negative-keywords.index' : 'keywords.index';
+        return $this->input('context') === 'negative-keywords' ? 'negative-keywords.index' : 'keywords.index';
     }
 }

@@ -17,6 +17,19 @@ class NegativeKeywordsTest extends TestCase
         $this->get('/negative-keywords')->assertRedirect('/login');
     }
 
+    public function test_a_client_created_from_the_negative_keywords_page_redirects_back_there(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->post('/clients', [
+            'name' => 'Bright Smiles Dental',
+            'industry_category' => 'Healthcare',
+            'context' => 'negative-keywords',
+        ]);
+
+        $response->assertRedirect(route('negative-keywords.index'));
+    }
+
     public function test_the_index_lists_clients_with_their_negative_keyword_count(): void
     {
         $user = User::factory()->create();
