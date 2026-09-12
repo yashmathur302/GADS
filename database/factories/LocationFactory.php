@@ -3,12 +3,13 @@
 namespace Database\Factories;
 
 use App\Models\Client;
+use App\Models\Location;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<Client>
+ * @extends Factory<Location>
  */
-class ClientFactory extends Factory
+class LocationFactory extends Factory
 {
     /**
      * Define the model's default state.
@@ -18,9 +19,8 @@ class ClientFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => $this->faker->company(),
-            'industry_category' => $this->faker->randomElement(['Healthcare', 'Education', 'Home Services', 'Legal', 'Retail']),
-            'type' => Client::TYPE_KEYWORDS,
+            'client_id' => Client::factory()->state(['type' => Client::TYPE_LOCATION]),
+            'location' => $this->faker->city().', '.$this->faker->stateAbbr(),
         ];
     }
 }

@@ -2,17 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\DeleteClientRequest;
 use App\Http\Requests\StoreClientRequest;
 use App\Http\Requests\UpdateClientRequest;
 use App\Models\Client;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 
 class ClientController extends Controller
 {
     public function store(StoreClientRequest $request): RedirectResponse
     {
-        Client::create($request->only(['name', 'industry_category']));
+        Client::create($request->only(['name', 'industry_category'])
+            + ['type' => $request->input('context')]);
 
         return redirect()
             ->route($request->redirectRouteName())
@@ -24,17 +25,20 @@ class ClientController extends Controller
         $client->update($request->only(['name', 'industry_category']));
 
         return redirect()
-            ->route($request->redirectRouteName())
+            ->route($client->sectionIndexRouteName())
             ->with('status', __(':name was updated.', ['name' => $request->string('name')]));
     }
 
-    public function destroy(DeleteClientRequest $request, Client $client): RedirectResponse
+    public function destroy(Request $request, Client $client): RedirectResponse
     {
         $name = $client->name;
+        $sectionLabel = $client->sectionLabel();
+        $redirectRoute = $client->sectionIndexRouteName();
+
         $client->delete();
 
         return redirect()
-            ->route($request->redirectRouteName())
-            ->with('status', __(':name and its keyword lists were deleted.', ['name' => $name]));
+            ->route($redirectRoute)
+            ->with('status', __(':name and its :section were deleted.', ['name' => $name, 'section' => $sectionLabel]));
     }
 }

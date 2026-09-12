@@ -15,8 +15,8 @@ class ClientManagementTest extends TestCase
     {
         $client = Client::factory()->create();
 
-        $this->patch("/clients/{$client->id}", ['context' => 'keywords'])->assertRedirect('/login');
-        $this->delete("/clients/{$client->id}", ['context' => 'keywords'])->assertRedirect('/login');
+        $this->patch("/clients/{$client->id}", ['name' => 'x', 'industry_category' => 'y'])->assertRedirect('/login');
+        $this->delete("/clients/{$client->id}")->assertRedirect('/login');
     }
 
     public function test_a_client_can_be_updated(): void
@@ -27,7 +27,6 @@ class ClientManagementTest extends TestCase
         $response = $this->actingAs($user)->patch("/clients/{$client->id}", [
             'name' => 'Acme Plumbing',
             'industry_category' => 'Home Services',
-            'context' => 'keywords',
         ]);
 
         $response->assertRedirect(route('keywords.index'));
@@ -38,18 +37,35 @@ class ClientManagementTest extends TestCase
         ]);
     }
 
-    public function test_updating_a_client_redirects_to_the_correct_context(): void
+    public function test_updating_a_client_redirects_based_on_its_own_stored_type_not_client_input(): void
     {
         $user = User::factory()->create();
-        $client = Client::factory()->create();
+        $client = Client::factory()->create(['type' => Client::TYPE_NEGATIVE_KEYWORDS]);
 
+        // No "context" is sent at all — the redirect must come from the
+        // client's own stored type, since trusting a client-submitted
+        // value here would let a mismatched request send you to the
+        // wrong index page.
         $response = $this->actingAs($user)->patch("/clients/{$client->id}", [
             'name' => 'Acme Plumbing',
             'industry_category' => 'Home Services',
-            'context' => 'negative-keywords',
         ]);
 
         $response->assertRedirect(route('negative-keywords.index'));
+    }
+
+    public function test_updating_a_client_does_not_change_its_type(): void
+    {
+        $user = User::factory()->create();
+        $client = Client::factory()->create(['type' => Client::TYPE_LOCATION]);
+
+        $this->actingAs($user)->patch("/clients/{$client->id}", [
+            'name' => 'Acme Plumbing',
+            'industry_category' => 'Home Services',
+            'type' => Client::TYPE_KEYWORDS,
+        ]);
+
+        $this->assertDatabaseHas('clients', ['id' => $client->id, 'type' => Client::TYPE_LOCATION]);
     }
 
     public function test_updating_a_client_requires_name_and_category(): void
@@ -57,7 +73,7 @@ class ClientManagementTest extends TestCase
         $user = User::factory()->create();
         $client = Client::factory()->create();
 
-        $response = $this->actingAs($user)->patch("/clients/{$client->id}", ['context' => 'keywords']);
+        $response = $this->actingAs($user)->patch("/clients/{$client->id}", []);
 
         $response->assertSessionHasErrors(['name', 'industry_category']);
     }
@@ -69,50 +85,48 @@ class ClientManagementTest extends TestCase
         $this->actingAs($user)->patch('/clients/99999', [
             'name' => 'Acme',
             'industry_category' => 'Home Services',
-            'context' => 'keywords',
         ])->assertNotFound();
     }
 
-    public function test_deleting_a_client_removes_it_and_redirects_to_the_correct_context(): void
+    public function test_deleting_a_client_removes_it_and_redirects_based_on_its_stored_type(): void
     {
         $user = User::factory()->create();
-        $client = Client::factory()->create();
+        $client = Client::factory()->create(['type' => Client::TYPE_LOCATION]);
 
-        $response = $this->actingAs($user)->delete("/clients/{$client->id}", ['context' => 'negative-keywords']);
+        $response = $this->actingAs($user)->delete("/clients/{$client->id}");
 
-        $response->assertRedirect(route('negative-keywords.index'));
+        $response->assertRedirect(route('locations.index'));
         $this->assertDatabaseMissing('clients', ['id' => $client->id]);
     }
 
-    public function test_deleting_a_client_also_deletes_its_keywords_and_negative_keywords(): void
+    public function test_deleting_a_client_cascades_to_its_child_records(): void
     {
         $user = User::factory()->create();
         $client = Client::factory()->create();
         $client->keywords()->create(['keyword' => 'plumber', 'match_type' => 'Broad']);
-        $client->negativeKeywords()->create(['keyword' => 'free', 'match_type' => 'Broad']);
 
-        $this->actingAs($user)->delete("/clients/{$client->id}", ['context' => 'keywords']);
+        $this->actingAs($user)->delete("/clients/{$client->id}");
 
         $this->assertDatabaseMissing('clients', ['id' => $client->id]);
         $this->assertDatabaseMissing('keywords', ['client_id' => $client->id]);
-        $this->assertDatabaseMissing('negative_keywords', ['client_id' => $client->id]);
     }
 
-    public function test_delete_rejects_an_invalid_context(): void
+    public function test_deleting_a_client_in_one_section_does_not_affect_a_different_client_in_another_section(): void
     {
         $user = User::factory()->create();
-        $client = Client::factory()->create();
+        $keywordsClient = Client::factory()->create(['name' => 'Acme Plumbing', 'type' => Client::TYPE_KEYWORDS]);
+        $negativeClient = Client::factory()->create(['name' => 'Acme Plumbing', 'type' => Client::TYPE_NEGATIVE_KEYWORDS]);
 
-        $response = $this->actingAs($user)->delete("/clients/{$client->id}", ['context' => 'https://evil.example.com']);
+        $this->actingAs($user)->delete("/clients/{$keywordsClient->id}");
 
-        $response->assertSessionHasErrors('context');
-        $this->assertDatabaseHas('clients', ['id' => $client->id]);
+        $this->assertDatabaseMissing('clients', ['id' => $keywordsClient->id]);
+        $this->assertDatabaseHas('clients', ['id' => $negativeClient->id]);
     }
 
     public function test_deleting_a_nonexistent_client_returns_404(): void
     {
         $user = User::factory()->create();
 
-        $this->actingAs($user)->delete('/clients/99999', ['context' => 'keywords'])->assertNotFound();
+        $this->actingAs($user)->delete('/clients/99999')->assertNotFound();
     }
 }

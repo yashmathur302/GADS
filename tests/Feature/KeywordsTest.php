@@ -57,7 +57,7 @@ class KeywordsTest extends TestCase
         $response->assertSessionHasErrors('context');
     }
 
-    public function test_a_client_created_from_negative_keywords_also_appears_on_the_keywords_page(): void
+    public function test_a_client_created_from_negative_keywords_does_not_appear_on_the_keywords_page(): void
     {
         $user = User::factory()->create();
 
@@ -69,7 +69,20 @@ class KeywordsTest extends TestCase
 
         $response = $this->actingAs($user)->get('/keywords');
 
-        $response->assertSeeText('Acme Plumbing');
+        $this->assertFalse($response->viewData('clients')->contains('name', 'Acme Plumbing'));
+    }
+
+    public function test_a_created_client_is_stored_with_the_keywords_type(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post('/clients', [
+            'name' => 'Acme Plumbing',
+            'industry_category' => 'Home Services',
+            'context' => 'keywords',
+        ]);
+
+        $this->assertDatabaseHas('clients', ['name' => 'Acme Plumbing', 'type' => 'keywords']);
     }
 
     public function test_the_keywords_index_lists_clients_with_their_keyword_count(): void

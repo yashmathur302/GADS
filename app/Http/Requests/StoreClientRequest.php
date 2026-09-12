@@ -32,7 +32,7 @@ class StoreClientRequest extends FormRequest
             // Which tab to return to after creating the client. Validated
             // against a fixed allowlist (not used as a raw URL) so this
             // can never become an open-redirect vector.
-            'context' => ['required', Rule::in(['keywords', 'negative-keywords'])],
+            'context' => ['required', Rule::in(['keywords', 'negative-keywords', 'location'])],
         ];
     }
 }

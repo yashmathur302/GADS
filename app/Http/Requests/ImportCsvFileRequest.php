@@ -2,15 +2,11 @@
 
 namespace App\Http\Requests;
 
-use App\Http\Requests\Concerns\RedirectsToClientContext;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
-class DeleteClientRequest extends FormRequest
+class ImportCsvFileRequest extends FormRequest
 {
-    use RedirectsToClientContext;
-
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -27,7 +23,7 @@ class DeleteClientRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'context' => ['required', Rule::in(['keywords', 'negative-keywords'])],
+            'file' => ['required', 'file', 'mimes:csv,txt', 'max:2048'],
         ];
     }
 }

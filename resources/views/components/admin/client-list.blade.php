@@ -2,7 +2,7 @@
 
 <div x-data="{ showForm: false }">
     <div class="flex items-center justify-between mb-4">
-        <p class="text-sm text-gray-500">{{ __('Clients with a keyword list under this section.') }}</p>
+        <p class="text-sm text-gray-500">{{ __('Clients under this section.') }}</p>
         <button
             type="button"
             @click="showForm = !showForm"
@@ -90,16 +90,14 @@
             <form id="edit-client-{{ $client->id }}" method="POST" action="{{ route('clients.update', $client) }}" class="hidden">
                 @csrf
                 @method('PATCH')
-                <input type="hidden" name="context" value="{{ $context }}">
             </form>
             <form
                 id="delete-client-{{ $client->id }}" method="POST" action="{{ route('clients.destroy', $client) }}" class="hidden"
                 x-data
-                x-on:submit="if (!confirm('{{ __('Delete this client? This also permanently deletes its keyword AND negative keyword lists. This cannot be undone.') }}')) $event.preventDefault()"
+                x-on:submit="if (!confirm('{{ __('Delete this client? This also permanently deletes its entire list here. This cannot be undone.') }}')) $event.preventDefault()"
             >
                 @csrf
                 @method('DELETE')
-                <input type="hidden" name="context" value="{{ $context }}">
             </form>
         @endforeach
     @endif

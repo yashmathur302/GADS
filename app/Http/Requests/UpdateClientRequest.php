@@ -2,15 +2,11 @@
 
 namespace App\Http\Requests;
 
-use App\Http\Requests\Concerns\RedirectsToClientContext;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class UpdateClientRequest extends FormRequest
 {
-    use RedirectsToClientContext;
-
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -29,7 +25,6 @@ class UpdateClientRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'industry_category' => ['required', 'string', 'max:255'],
-            'context' => ['required', Rule::in(['keywords', 'negative-keywords'])],
         ];
     }
 }

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\ImportKeywordCsvRequest;
+use App\Http\Requests\ImportCsvFileRequest;
 use App\Models\Client;
 use App\Services\KeywordCsvImporter;
 use Illuminate\Http\RedirectResponse;
@@ -14,20 +14,24 @@ class NegativeKeywordController extends Controller
     public function index(): View
     {
         return view('negative-keywords.index', [
-            'clients' => Client::withCount('negativeKeywords')->orderBy('name')->get(),
+            'clients' => Client::ofType(Client::TYPE_NEGATIVE_KEYWORDS)->withCount('negativeKeywords')->orderBy('name')->get(),
         ]);
     }
 
     public function show(Client $client): View
     {
+        abort_unless($client->type === Client::TYPE_NEGATIVE_KEYWORDS, 404);
+
         return view('negative-keywords.show', [
             'client' => $client,
             'keywords' => $client->negativeKeywords()->orderBy('keyword')->get(),
         ]);
     }
 
-    public function import(ImportKeywordCsvRequest $request, Client $client, KeywordCsvImporter $importer): RedirectResponse
+    public function import(ImportCsvFileRequest $request, Client $client, KeywordCsvImporter $importer): RedirectResponse
     {
+        abort_unless($client->type === Client::TYPE_NEGATIVE_KEYWORDS, 404);
+
         $result = $importer->import($request->file('file'), $client, 'negativeKeywords');
 
         return redirect()
@@ -37,6 +41,8 @@ class NegativeKeywordController extends Controller
 
     public function export(Client $client): StreamedResponse
     {
+        abort_unless($client->type === Client::TYPE_NEGATIVE_KEYWORDS, 404);
+
         $keywords = $client->negativeKeywords()->orderBy('keyword')->get();
 
         return response()->streamDownload(function () use ($keywords) {

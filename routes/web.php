@@ -4,6 +4,7 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\DiscoverKeywordsController;
 use App\Http\Controllers\KeywordController;
 use App\Http\Controllers\KeywordPlannerController;
+use App\Http\Controllers\LocationController;
 use App\Http\Controllers\NegativeKeywordController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -41,6 +42,13 @@ Route::middleware('auth')->group(function () {
         Route::get('/{client}', [NegativeKeywordController::class, 'show'])->name('show');
         Route::post('/{client}/import', [NegativeKeywordController::class, 'import'])->name('import');
         Route::get('/{client}/export', [NegativeKeywordController::class, 'export'])->name('export');
+    });
+
+    Route::prefix('locations')->name('locations.')->group(function () {
+        Route::get('/', [LocationController::class, 'index'])->name('index');
+        Route::get('/{client}', [LocationController::class, 'show'])->name('show');
+        Route::post('/{client}/import', [LocationController::class, 'import'])->name('import');
+        Route::get('/{client}/export', [LocationController::class, 'export'])->name('export');
     });
 });
 

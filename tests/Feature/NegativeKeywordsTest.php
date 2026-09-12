@@ -33,7 +33,7 @@ class NegativeKeywordsTest extends TestCase
     public function test_the_index_lists_clients_with_their_negative_keyword_count(): void
     {
         $user = User::factory()->create();
-        $client = Client::factory()->create(['name' => 'Acme Plumbing']);
+        $client = Client::factory()->create(['name' => 'Acme Plumbing', 'type' => Client::TYPE_NEGATIVE_KEYWORDS]);
         $client->negativeKeywords()->create(['keyword' => 'free', 'match_type' => 'Broad']);
 
         $response = $this->actingAs($user)->get('/negative-keywords');
@@ -42,10 +42,18 @@ class NegativeKeywordsTest extends TestCase
         $response->assertSeeText('1');
     }
 
+    public function test_a_keywords_type_client_is_not_reachable_via_the_negative_keywords_routes(): void
+    {
+        $user = User::factory()->create();
+        $client = Client::factory()->create(['type' => Client::TYPE_KEYWORDS]);
+
+        $this->actingAs($user)->get("/negative-keywords/{$client->id}")->assertNotFound();
+    }
+
     public function test_importing_a_csv_supports_match_types(): void
     {
         $user = User::factory()->create();
-        $client = Client::factory()->create();
+        $client = Client::factory()->create(['type' => Client::TYPE_NEGATIVE_KEYWORDS]);
 
         $csv = "\"\"\"cheap\"\"\"\n[free]\nplain broad term\n";
         $file = UploadedFile::fake()->createWithContent('negatives.csv', $csv);
@@ -61,7 +69,7 @@ class NegativeKeywordsTest extends TestCase
     public function test_a_keyword_and_a_negative_keyword_with_the_same_text_do_not_collide(): void
     {
         $user = User::factory()->create();
-        $client = Client::factory()->create();
+        $client = Client::factory()->create(['type' => Client::TYPE_NEGATIVE_KEYWORDS]);
         $client->keywords()->create(['keyword' => 'plumber', 'match_type' => 'Broad']);
 
         $file = UploadedFile::fake()->createWithContent('negatives.csv', "plumber\n");
@@ -74,7 +82,7 @@ class NegativeKeywordsTest extends TestCase
     public function test_negative_keywords_can_be_exported_to_csv(): void
     {
         $user = User::factory()->create();
-        $client = Client::factory()->create();
+        $client = Client::factory()->create(['type' => Client::TYPE_NEGATIVE_KEYWORDS]);
         $client->negativeKeywords()->create(['keyword' => 'free', 'match_type' => 'Broad']);
 
         $response = $this->actingAs($user)->get("/negative-keywords/{$client->id}/export");

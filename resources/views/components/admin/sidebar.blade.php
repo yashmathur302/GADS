@@ -4,6 +4,7 @@
         ['label' => __('Keyword Planner'), 'route' => 'planner.index', 'icon' => 'chart'],
         ['label' => __('Keywords'), 'route' => 'keywords.index', 'icon' => 'tag', 'match' => 'keywords.*'],
         ['label' => __('Negative Keywords'), 'route' => 'negative-keywords.index', 'icon' => 'tag-off', 'match' => 'negative-keywords.*'],
+        ['label' => __('Location'), 'route' => 'locations.index', 'icon' => 'map-pin', 'match' => 'locations.*'],
     ];
 @endphp
 
