@@ -1,7 +1,10 @@
 <?php
 
+use App\Http\Controllers\ClientController;
 use App\Http\Controllers\DiscoverKeywordsController;
+use App\Http\Controllers\KeywordController;
 use App\Http\Controllers\KeywordPlannerController;
+use App\Http\Controllers\NegativeKeywordController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
@@ -21,6 +24,22 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+
+    Route::post('/clients', [ClientController::class, 'store'])->name('clients.store');
+
+    Route::prefix('keywords')->name('keywords.')->group(function () {
+        Route::get('/', [KeywordController::class, 'index'])->name('index');
+        Route::get('/{client}', [KeywordController::class, 'show'])->name('show');
+        Route::post('/{client}/import', [KeywordController::class, 'import'])->name('import');
+        Route::get('/{client}/export', [KeywordController::class, 'export'])->name('export');
+    });
+
+    Route::prefix('negative-keywords')->name('negative-keywords.')->group(function () {
+        Route::get('/', [NegativeKeywordController::class, 'index'])->name('index');
+        Route::get('/{client}', [NegativeKeywordController::class, 'show'])->name('show');
+        Route::post('/{client}/import', [NegativeKeywordController::class, 'import'])->name('import');
+        Route::get('/{client}/export', [NegativeKeywordController::class, 'export'])->name('export');
+    });
 });
 
 require __DIR__.'/auth.php';

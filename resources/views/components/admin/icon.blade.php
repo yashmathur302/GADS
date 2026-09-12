@@ -40,5 +40,21 @@
             <line x1="4" y1="18" x2="20" y2="18" />
             <circle cx="11" cy="18" r="2" fill="currentColor" stroke="none" />
             @break
+
+        @case('tag')
+            <path d="M20.59 13.41 12 22 2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82Z" />
+            <circle cx="7" cy="7" r="1.25" fill="currentColor" stroke="none" />
+            @break
+
+        @case('tag-off')
+            <path d="M20.59 13.41 12 22 2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82Z" />
+            <line x1="4" y1="4" x2="20" y2="20" />
+            @break
+
+        @case('upload')
+            <path d="M12 21V9" />
+            <polyline points="7 14 12 9 17 14" />
+            <path d="M4 19h16" />
+            @break
     @endswitch
 </svg>

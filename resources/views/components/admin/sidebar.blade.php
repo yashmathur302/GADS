@@ -2,6 +2,8 @@
     $navItems = [
         ['label' => __('Discover New Keywords'), 'route' => 'discover.index', 'icon' => 'search'],
         ['label' => __('Keyword Planner'), 'route' => 'planner.index', 'icon' => 'chart'],
+        ['label' => __('Keywords'), 'route' => 'keywords.index', 'icon' => 'tag', 'match' => 'keywords.*'],
+        ['label' => __('Negative Keywords'), 'route' => 'negative-keywords.index', 'icon' => 'tag-off', 'match' => 'negative-keywords.*'],
     ];
 @endphp
 
@@ -34,10 +36,11 @@
 
     <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-1">
         @foreach ($navItems as $item)
+            @php $isActive = request()->routeIs($item['match'] ?? $item['route']); @endphp
             <a
                 href="{{ route($item['route']) }}"
-                @if (request()->routeIs($item['route'])) aria-current="page" @endif
-                class="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition {{ request()->routeIs($item['route']) ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }}"
+                @if ($isActive) aria-current="page" @endif
+                class="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition {{ $isActive ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }}"
             >
                 <x-admin.icon :name="$item['icon']" class="w-4 h-4 shrink-0" />
                 {{ $item['label'] }}

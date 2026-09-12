@@ -5,8 +5,8 @@
         <p class="mt-2 text-sm text-gray-600">{{ $message }}</p>
 
         @auth
-            <a href="{{ route('dashboard') }}" class="mt-6 inline-block text-sm font-medium text-indigo-600 hover:text-indigo-500">
-                {{ __('Back to dashboard') }}
+            <a href="{{ route('discover.index') }}" class="mt-6 inline-block text-sm font-medium text-indigo-600 hover:text-indigo-500">
+                {{ __('Back to Discover New Keywords') }}
             </a>
         @else
             <a href="{{ route('login') }}" class="mt-6 inline-block text-sm font-medium text-indigo-600 hover:text-indigo-500">
