@@ -207,4 +207,39 @@ class KeywordsTest extends TestCase
         $this->assertSame(['Keyword', 'Match Type'], $rows[0]);
         $this->assertSame(['emergency plumber', 'Exact'], $rows[1]);
     }
+
+    public function test_a_single_keyword_can_be_deleted(): void
+    {
+        $user = User::factory()->create();
+        $client = Client::factory()->create();
+        $keyword = $client->keywords()->create(['keyword' => 'emergency plumber', 'match_type' => 'Broad']);
+        $other = $client->keywords()->create(['keyword' => 'drain cleaning', 'match_type' => 'Broad']);
+
+        $response = $this->actingAs($user)->delete("/keywords/{$client->id}/{$keyword->id}");
+
+        $response->assertRedirect(route('keywords.show', $client));
+        $this->assertDatabaseMissing('keywords', ['id' => $keyword->id]);
+        $this->assertDatabaseHas('keywords', ['id' => $other->id]);
+    }
+
+    public function test_deleting_a_keyword_belonging_to_a_different_client_returns_404(): void
+    {
+        $user = User::factory()->create();
+        $client = Client::factory()->create();
+        $otherClient = Client::factory()->create();
+        $keyword = $otherClient->keywords()->create(['keyword' => 'plumber', 'match_type' => 'Broad']);
+
+        $response = $this->actingAs($user)->delete("/keywords/{$client->id}/{$keyword->id}");
+
+        $response->assertNotFound();
+        $this->assertDatabaseHas('keywords', ['id' => $keyword->id]);
+    }
+
+    public function test_deleting_a_keyword_requires_authentication(): void
+    {
+        $client = Client::factory()->create();
+        $keyword = $client->keywords()->create(['keyword' => 'plumber', 'match_type' => 'Broad']);
+
+        $this->delete("/keywords/{$client->id}/{$keyword->id}")->assertRedirect('/login');
+    }
 }

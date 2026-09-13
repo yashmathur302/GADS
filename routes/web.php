@@ -35,6 +35,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/{client}', [KeywordController::class, 'show'])->name('show');
         Route::post('/{client}/import', [KeywordController::class, 'import'])->name('import');
         Route::get('/{client}/export', [KeywordController::class, 'export'])->name('export');
+        Route::delete('/{client}/{keyword}', [KeywordController::class, 'destroy'])->name('destroy');
     });
 
     Route::prefix('negative-keywords')->name('negative-keywords.')->group(function () {
@@ -42,6 +43,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/{client}', [NegativeKeywordController::class, 'show'])->name('show');
         Route::post('/{client}/import', [NegativeKeywordController::class, 'import'])->name('import');
         Route::get('/{client}/export', [NegativeKeywordController::class, 'export'])->name('export');
+        Route::delete('/{client}/{negativeKeyword}', [NegativeKeywordController::class, 'destroy'])->name('destroy');
     });
 
     Route::prefix('locations')->name('locations.')->group(function () {
@@ -49,6 +51,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/{client}', [LocationController::class, 'show'])->name('show');
         Route::post('/{client}/import', [LocationController::class, 'import'])->name('import');
         Route::get('/{client}/export', [LocationController::class, 'export'])->name('export');
+        Route::delete('/{client}/{location}', [LocationController::class, 'destroy'])->name('destroy');
     });
 });
 

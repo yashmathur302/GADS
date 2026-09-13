@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ImportCsvFileRequest;
 use App\Models\Client;
+use App\Models\Location;
 use App\Services\LocationCsvImporter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
@@ -37,6 +38,18 @@ class LocationController extends Controller
         return redirect()
             ->route('locations.show', $client)
             ->with('status', $this->summarize($result));
+    }
+
+    public function destroy(Client $client, Location $location): RedirectResponse
+    {
+        abort_unless($client->type === Client::TYPE_LOCATION, 404);
+        abort_unless($location->client_id === $client->id, 404);
+
+        $location->delete();
+
+        return redirect()
+            ->route('locations.show', $client)
+            ->with('status', __(':location was deleted.', ['location' => $location->location]));
     }
 
     public function export(Client $client): StreamedResponse

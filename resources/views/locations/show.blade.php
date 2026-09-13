@@ -8,6 +8,7 @@
         :locations="$locations"
         import-route="locations.import"
         export-route="locations.export"
+        delete-route="locations.destroy"
         index-route="locations.index"
         :index-label="__('Back to Location')"
     />

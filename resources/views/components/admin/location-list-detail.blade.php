@@ -1,4 +1,4 @@
-@props(['client', 'locations', 'importRoute', 'exportRoute', 'indexRoute', 'indexLabel'])
+@props(['client', 'locations', 'importRoute', 'exportRoute', 'deleteRoute', 'indexRoute', 'indexLabel'])
 
 <div class="space-y-6">
     <div>
@@ -50,17 +50,33 @@
                     <thead>
                         <tr class="text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
                             <th class="px-4 sm:px-6 py-2">{{ __('Location') }}</th>
+                            <th class="px-4 sm:px-6 py-2"><span class="sr-only">{{ __('Actions') }}</span></th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         @foreach ($locations as $location)
                             <tr>
                                 <td class="px-4 sm:px-6 py-2.5 font-medium text-gray-900">{{ $location->location }}</td>
+                                <td class="px-4 sm:px-6 py-2.5 text-right">
+                                    <button type="submit" form="delete-location-{{ $location->id }}" class="text-red-600 hover:text-red-800 font-medium">{{ __('Delete') }}</button>
+                                </td>
                             </tr>
                         @endforeach
                     </tbody>
                 </table>
             </div>
+
+            {{-- One hidden form per location, referenced by the Delete button above via the `form="..."` attribute. --}}
+            @foreach ($locations as $location)
+                <form
+                    id="delete-location-{{ $location->id }}" method="POST" action="{{ route($deleteRoute, [$client, $location]) }}" class="hidden"
+                    x-data
+                    x-on:submit="if (!confirm('{{ __('Delete this location? This cannot be undone.') }}')) $event.preventDefault()"
+                >
+                    @csrf
+                    @method('DELETE')
+                </form>
+            @endforeach
         @endif
     </x-admin.card>
 </div>

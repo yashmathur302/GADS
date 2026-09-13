@@ -1,4 +1,4 @@
-@props(['client', 'keywords', 'importRoute', 'exportRoute', 'indexRoute', 'indexLabel'])
+@props(['client', 'keywords', 'importRoute', 'exportRoute', 'deleteRoute', 'indexRoute', 'indexLabel'])
 
 <div class="space-y-6">
     <div>
@@ -50,19 +50,35 @@
                     <thead>
                         <tr class="text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
                             <th class="px-4 sm:px-6 py-2">{{ __('Keyword') }}</th>
-                            <th class="px-4 sm:px-6 py-2">{{ __('Match type') }}</th>
+                            <th class="px-4 py-2">{{ __('Match type') }}</th>
+                            <th class="px-4 sm:px-6 py-2"><span class="sr-only">{{ __('Actions') }}</span></th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         @foreach ($keywords as $keyword)
                             <tr>
                                 <td class="px-4 sm:px-6 py-2.5 font-medium text-gray-900">{{ $keyword->keyword }}</td>
-                                <td class="px-4 sm:px-6 py-2.5 text-gray-600">{{ $keyword->match_type->value }}</td>
+                                <td class="px-4 py-2.5 text-gray-600">{{ $keyword->match_type->value }}</td>
+                                <td class="px-4 sm:px-6 py-2.5 text-right">
+                                    <button type="submit" form="delete-keyword-{{ $keyword->id }}" class="text-red-600 hover:text-red-800 font-medium">{{ __('Delete') }}</button>
+                                </td>
                             </tr>
                         @endforeach
                     </tbody>
                 </table>
             </div>
+
+            {{-- One hidden form per keyword, referenced by the Delete button above via the `form="..."` attribute — kept outside the table so a stray <form> tag never disturbs the table's markup. --}}
+            @foreach ($keywords as $keyword)
+                <form
+                    id="delete-keyword-{{ $keyword->id }}" method="POST" action="{{ route($deleteRoute, [$client, $keyword]) }}" class="hidden"
+                    x-data
+                    x-on:submit="if (!confirm('{{ __('Delete this keyword? This cannot be undone.') }}')) $event.preventDefault()"
+                >
+                    @csrf
+                    @method('DELETE')
+                </form>
+            @endforeach
         @endif
     </x-admin.card>
 </div>

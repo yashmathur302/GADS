@@ -138,4 +138,27 @@ class LocationsTest extends TestCase
         $this->assertSame(['Location'], $rows[0]);
         $this->assertSame(['New York, NY'], $rows[1]);
     }
+
+    public function test_a_single_location_can_be_deleted(): void
+    {
+        $user = User::factory()->create();
+        $client = Client::factory()->create(['type' => Client::TYPE_LOCATION]);
+        $location = $client->locations()->create(['location' => 'New York, NY']);
+
+        $response = $this->actingAs($user)->delete("/locations/{$client->id}/{$location->id}");
+
+        $response->assertRedirect(route('locations.show', $client));
+        $this->assertDatabaseMissing('locations', ['id' => $location->id]);
+    }
+
+    public function test_deleting_a_location_belonging_to_a_different_client_returns_404(): void
+    {
+        $user = User::factory()->create();
+        $client = Client::factory()->create(['type' => Client::TYPE_LOCATION]);
+        $otherClient = Client::factory()->create(['type' => Client::TYPE_LOCATION]);
+        $location = $otherClient->locations()->create(['location' => 'New York, NY']);
+
+        $this->actingAs($user)->delete("/locations/{$client->id}/{$location->id}")->assertNotFound();
+        $this->assertDatabaseHas('locations', ['id' => $location->id]);
+    }
 }

@@ -8,6 +8,7 @@
         :keywords="$keywords"
         import-route="negative-keywords.import"
         export-route="negative-keywords.export"
+        delete-route="negative-keywords.destroy"
         index-route="negative-keywords.index"
         :index-label="__('Back to Negative Keywords')"
     />

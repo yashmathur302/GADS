@@ -92,4 +92,27 @@ class NegativeKeywordsTest extends TestCase
         $this->assertSame(['Keyword', 'Match Type'], $rows[0]);
         $this->assertSame(['free', 'Broad'], $rows[1]);
     }
+
+    public function test_a_single_negative_keyword_can_be_deleted(): void
+    {
+        $user = User::factory()->create();
+        $client = Client::factory()->create(['type' => Client::TYPE_NEGATIVE_KEYWORDS]);
+        $keyword = $client->negativeKeywords()->create(['keyword' => 'free', 'match_type' => 'Broad']);
+
+        $response = $this->actingAs($user)->delete("/negative-keywords/{$client->id}/{$keyword->id}");
+
+        $response->assertRedirect(route('negative-keywords.show', $client));
+        $this->assertDatabaseMissing('negative_keywords', ['id' => $keyword->id]);
+    }
+
+    public function test_deleting_a_negative_keyword_belonging_to_a_different_client_returns_404(): void
+    {
+        $user = User::factory()->create();
+        $client = Client::factory()->create(['type' => Client::TYPE_NEGATIVE_KEYWORDS]);
+        $otherClient = Client::factory()->create(['type' => Client::TYPE_NEGATIVE_KEYWORDS]);
+        $keyword = $otherClient->negativeKeywords()->create(['keyword' => 'free', 'match_type' => 'Broad']);
+
+        $this->actingAs($user)->delete("/negative-keywords/{$client->id}/{$keyword->id}")->assertNotFound();
+        $this->assertDatabaseHas('negative_keywords', ['id' => $keyword->id]);
+    }
 }

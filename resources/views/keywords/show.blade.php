@@ -8,6 +8,7 @@
         :keywords="$keywords"
         import-route="keywords.import"
         export-route="keywords.export"
+        delete-route="keywords.destroy"
         index-route="keywords.index"
         :index-label="__('Back to Keywords')"
     />

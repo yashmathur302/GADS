@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ImportCsvFileRequest;
 use App\Models\Client;
+use App\Models\NegativeKeyword;
 use App\Services\KeywordCsvImporter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
@@ -37,6 +38,18 @@ class NegativeKeywordController extends Controller
         return redirect()
             ->route('negative-keywords.show', $client)
             ->with('status', $this->summarize($result));
+    }
+
+    public function destroy(Client $client, NegativeKeyword $negativeKeyword): RedirectResponse
+    {
+        abort_unless($client->type === Client::TYPE_NEGATIVE_KEYWORDS, 404);
+        abort_unless($negativeKeyword->client_id === $client->id, 404);
+
+        $negativeKeyword->delete();
+
+        return redirect()
+            ->route('negative-keywords.show', $client)
+            ->with('status', __(':keyword was deleted.', ['keyword' => $negativeKeyword->keyword]));
     }
 
     public function export(Client $client): StreamedResponse
