@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BlogKeywordController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\DiscoverKeywordsController;
 use App\Http\Controllers\KeywordController;
@@ -52,6 +53,14 @@ Route::middleware('auth')->group(function () {
         Route::post('/{client}/import', [LocationController::class, 'import'])->name('import');
         Route::get('/{client}/export', [LocationController::class, 'export'])->name('export');
         Route::delete('/{client}/{location}', [LocationController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('blog-keywords')->name('blog-keywords.')->group(function () {
+        Route::get('/', [BlogKeywordController::class, 'index'])->name('index');
+        Route::get('/{client}', [BlogKeywordController::class, 'show'])->name('show');
+        Route::post('/{client}/import', [BlogKeywordController::class, 'import'])->name('import');
+        Route::get('/{client}/export', [BlogKeywordController::class, 'export'])->name('export');
+        Route::delete('/{client}/{blogKeyword}', [BlogKeywordController::class, 'destroy'])->name('destroy');
     });
 });
 

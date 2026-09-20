@@ -26,6 +26,8 @@ class Client extends Model
 
     public const TYPE_LOCATION = 'location';
 
+    public const TYPE_BLOG_KEYWORDS = 'blog-keywords';
+
     protected $fillable = ['name', 'industry_category', 'type'];
 
     public function keywords(): HasMany
@@ -43,6 +45,11 @@ class Client extends Model
         return $this->hasMany(Location::class);
     }
 
+    public function blogKeywords(): HasMany
+    {
+        return $this->hasMany(BlogKeyword::class);
+    }
+
     public function scopeOfType(Builder $query, string $type): Builder
     {
         return $query->where('type', $type);
@@ -53,6 +60,7 @@ class Client extends Model
         return match ($this->type) {
             self::TYPE_NEGATIVE_KEYWORDS => 'negative-keywords.index',
             self::TYPE_LOCATION => 'locations.index',
+            self::TYPE_BLOG_KEYWORDS => 'blog-keywords.index',
             default => 'keywords.index',
         };
     }
@@ -62,6 +70,7 @@ class Client extends Model
         return match ($this->type) {
             self::TYPE_NEGATIVE_KEYWORDS => __('negative keyword list'),
             self::TYPE_LOCATION => __('location list'),
+            self::TYPE_BLOG_KEYWORDS => __('blog keyword list'),
             default => __('keyword list'),
         };
     }

@@ -15,6 +15,7 @@ trait RedirectsToClientContext
         return match ($this->input('context')) {
             'negative-keywords' => 'negative-keywords.index',
             'location' => 'locations.index',
+            'blog-keywords' => 'blog-keywords.index',
             default => 'keywords.index',
         };
     }

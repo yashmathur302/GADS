@@ -61,5 +61,12 @@
             <path d="M20 10.5c0 5.5-8 11.5-8 11.5s-8-6-8-11.5a8 8 0 0 1 16 0Z" />
             <circle cx="12" cy="10.5" r="2.75" />
             @break
+
+        @case('file-text')
+            <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z" />
+            <polyline points="14 3 14 8 19 8" />
+            <line x1="8.5" y1="13" x2="15.5" y2="13" />
+            <line x1="8.5" y1="16.5" x2="13" y2="16.5" />
+            @break
     @endswitch
 </svg>

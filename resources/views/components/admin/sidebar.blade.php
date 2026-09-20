@@ -5,6 +5,7 @@
         ['label' => __('Keywords'), 'route' => 'keywords.index', 'icon' => 'tag', 'match' => 'keywords.*'],
         ['label' => __('Negative Keywords'), 'route' => 'negative-keywords.index', 'icon' => 'tag-off', 'match' => 'negative-keywords.*'],
         ['label' => __('Location'), 'route' => 'locations.index', 'icon' => 'map-pin', 'match' => 'locations.*'],
+        ['label' => __('Blog Keywords'), 'route' => 'blog-keywords.index', 'icon' => 'file-text', 'match' => 'blog-keywords.*'],
     ];
 @endphp
 
