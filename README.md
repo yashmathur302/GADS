@@ -1,4 +1,4 @@
-# GADS — Laravel Admin Panel
+# Prism Strategy Hub
 
 A Laravel admin panel scaffold built to a security-first standard, for a
 single authorized admin user. This is the foundational scaffold only —

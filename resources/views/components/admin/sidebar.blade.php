@@ -29,8 +29,8 @@
                 <x-brand-mark class="w-5 h-5" />
             </span>
             <span class="leading-tight">
-                <span class="block font-bold text-white tracking-tight">GADS</span>
-                <span class="block text-[11px] font-medium text-gray-400 uppercase tracking-wider">{{ __('Analysis Hub') }}</span>
+                <span class="block font-bold text-white tracking-tight">{{ __('PRISM') }}</span>
+                <span class="block text-[11px] font-medium text-gray-400 uppercase tracking-wider">{{ __('Strategy Hub') }}</span>
             </span>
         </a>
     </div>

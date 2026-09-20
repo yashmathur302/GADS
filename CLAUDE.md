@@ -1,4 +1,4 @@
-# GADS — Laravel Admin Panel: Standing Development Standards
+# Prism Strategy Hub — Standing Development Standards
 
 This file is the permanent technical foundation for this project. It applies to
 **every** future feature, migration, controller, view, and PR — not just the
